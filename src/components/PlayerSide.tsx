@@ -20,6 +20,13 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
 }) => {
   const isPlayer1 = player === 1;
   
+  const handleTap = () => {
+    console.log(`Player ${player} tapped, disabled: ${disabled}`);
+    if (!disabled) {
+      onTap();
+    }
+  };
+  
   return (
     <div
       className={cn(
@@ -28,7 +35,7 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
         disabled && "opacity-50 pointer-events-none",
         className
       )}
-      onClick={disabled ? undefined : onTap}
+      onClick={handleTap}
     >
       <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
         <div className={cn(

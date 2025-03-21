@@ -32,6 +32,7 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
 
   // Start changing numbers
   const startChangingNumbers = useCallback(() => {
+    console.log("Start changing numbers");
     if (gameState !== "playing") return;
 
     let changeInterval: NodeJS.Timeout;
@@ -42,9 +43,11 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
       // Generate a random number between 0 and 100
       const nextNumber = Math.floor(Math.random() * 101);
       setCurrentNumber(nextNumber);
+      console.log(`Number changed to: ${nextNumber}`);
       
       // Check if it's greater than 50
       if (nextNumber > 50 && !isGreaterThan50) {
+        console.log("Number is now greater than 50!");
         setIsGreaterThan50(true);
         setTimeWhenGreater(Date.now());
       } else if (nextNumber <= 50 && isGreaterThan50) {
@@ -65,16 +68,17 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
 
   // Start the game
   const startGame = useCallback(() => {
+    console.log("Starting ChangingNumbers game");
     setGameState("playing");
     setTimeRemaining(maxTime);
     setWinner(null);
     setCurrentNumber(0);
     setIsGreaterThan50(false);
-    startChangingNumbers();
-  }, [maxTime, startChangingNumbers]);
+  }, [maxTime]);
 
   // Handle player tap
   const handlePlayerTap = useCallback((player: Player) => {
+    console.log(`Player ${player} tapped. Game state: ${gameState}, Number: ${currentNumber}, Greater than 50: ${isGreaterThan50}`);
     if (gameState !== "playing") return;
     
     // If current number is greater than 50, the tap is valid
@@ -82,6 +86,7 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
       const timeElapsed = Date.now() - timeWhenGreater;
       setWinner(player);
       setGameState("complete");
+      console.log(`Player ${player} wins! Tapped when number was > 50.`);
       
       // Small delay before completing the game
       setTimeout(() => {
@@ -92,12 +97,13 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
       const otherPlayer = player === 1 ? 2 : 1;
       setWinner(otherPlayer);
       setGameState("complete");
+      console.log(`Player ${player} tapped when number was <= 50. Player ${otherPlayer} wins.`);
       
       setTimeout(() => {
         onGameComplete(otherPlayer, 0);
       }, 2000);
     }
-  }, [gameState, isGreaterThan50, onGameComplete, timeWhenGreater]);
+  }, [gameState, isGreaterThan50, onGameComplete, timeWhenGreater, currentNumber]);
 
   // Timer logic
   useEffect(() => {
@@ -120,6 +126,7 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
   // Handle timeout
   useEffect(() => {
     if (timeRemaining <= 0 && gameState === "playing") {
+      console.log("Time's up in ChangingNumbers game!");
       setGameState("complete");
       setTimeout(() => {
         onGameComplete(null, maxTime);
@@ -138,8 +145,16 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
     }
   };
 
+  // Added a useEffect to properly initialize game when state changes to playing
+  useEffect(() => {
+    if (gameState === "playing") {
+      console.log("Game state changed to playing, initializing...");
+      startChangingNumbers();
+    }
+  }, [gameState, startChangingNumbers]);
+
   return (
-    <div className="game-container">
+    <div className="game-container bg-gradient-to-b from-blue-200 to-blue-300">
       <GameHeader
         player1Score={player1Score}
         player2Score={player2Score}
@@ -151,16 +166,16 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
       
       {gameState === "ready" && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={startGame}>
-          <div className="glass-panel p-6 text-center max-w-xs mx-4">
+          <div className="cartoon-border bg-white p-8 text-center max-w-xs mx-4">
             <div className="text-4xl mb-4">🔢</div>
-            <h2 className="text-xl font-bold mb-2">Changing Numbers</h2>
-            <p className="text-muted-foreground mb-6">
+            <h2 className="text-2xl font-black mb-4 uppercase">Changing Numbers</h2>
+            <p className="text-gray-700 mb-6 font-bold">
               Tap when you see a number greater than 50!
             </p>
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
-              className="text-muted-foreground text-sm"
+              className="text-gray-500 font-bold uppercase"
             >
               Tap to Start
             </motion.div>
@@ -168,12 +183,12 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
         </div>
       )}
       
-      <div className="flex flex-row h-full">
+      <div className="flex flex-row h-full border-t-4 border-black">
         <PlayerSide
           player={1}
           onTap={() => handlePlayerTap(1)}
           disabled={gameState !== "playing"}
-          className="border-r border-white/10"
+          className="border-r-4 border-black"
         >
           <div className="flex flex-col items-center justify-center w-full h-full">
             {gameState === "playing" && (
@@ -183,12 +198,12 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.2 }}
-                  className={`text-8xl font-bold ${getNumberColor()}`}
+                  className={`text-8xl font-bold ${getNumberColor()} cartoon-text`}
                 >
                   {currentNumber}
                 </motion.div>
-                <div className="mt-6 text-lg text-white/80">
-                  Tap when number is <span className="font-bold text-green-500">&gt; 50</span>
+                <div className="mt-6 text-xl font-bold text-black">
+                  Tap when number is <span className="font-black text-green-500">&gt; 50</span>
                 </div>
               </>
             )}
@@ -199,7 +214,7 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
           player={2}
           onTap={() => handlePlayerTap(2)}
           disabled={gameState !== "playing"}
-          className="border-l border-white/10"
+          className="border-l-4 border-black"
         >
           <div className="flex flex-col items-center justify-center w-full h-full">
             {gameState === "playing" && (
@@ -209,12 +224,12 @@ const ChangingNumbers: React.FC<ChangingNumbersProps> = ({
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.2 }}
-                  className={`text-8xl font-bold ${getNumberColor()}`}
+                  className={`text-8xl font-bold ${getNumberColor()} cartoon-text`}
                 >
                   {currentNumber}
                 </motion.div>
-                <div className="mt-6 text-lg text-white/80">
-                  Tap when number is <span className="font-bold text-green-500">&gt; 50</span>
+                <div className="mt-6 text-xl font-bold text-black">
+                  Tap when number is <span className="font-black text-green-500">&gt; 50</span>
                 </div>
               </>
             )}

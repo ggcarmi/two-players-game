@@ -32,14 +32,16 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
 
   // Initialize the game with all minus symbols
   const initGame = useCallback(() => {
+    console.log("Initializing PlusMinus game");
     const initialSymbols = Array(30).fill("minus");
     setSymbols(initialSymbols);
     setMorePluses(false);
     
-    // Set a random time when we'll start changing symbols to plus
-    const startChangingTime = 2000 + Math.random() * 5000;
+    // Start changing symbols after a short delay
+    const startChangingTime = 2000 + Math.random() * 3000;
     setTimeout(() => {
       if (gameState === "playing") {
+        console.log("Starting to change symbols");
         startChangingSymbols();
       }
     }, startChangingTime);
@@ -47,8 +49,10 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
 
   // Start changing symbols from minus to plus
   const startChangingSymbols = useCallback(() => {
+    console.log("Starting symbol changes");
     const interval = setInterval(() => {
       if (gameState !== "playing") {
+        console.log("Game no longer playing, stopping symbol changes");
         clearInterval(interval);
         return;
       }
@@ -67,6 +71,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
         const minusCount = newSymbols.filter(s => s === "minus").length;
         
         if (plusCount > minusCount && !morePluses) {
+          console.log(`More pluses now! ${plusCount} pluses, ${minusCount} minuses`);
           setMorePluses(true);
           setTimeWhenReady(Date.now());
         }
@@ -80,6 +85,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
 
   // Start the game
   const startGame = useCallback(() => {
+    console.log("Starting PlusMinus game");
     setGameState("playing");
     setTimeRemaining(maxTime);
     setWinner(null);
@@ -88,6 +94,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
 
   // Handle player tap
   const handlePlayerTap = useCallback((player: Player) => {
+    console.log(`Player ${player} tapped. Game state: ${gameState}, More pluses: ${morePluses}`);
     if (gameState !== "playing") return;
     
     // If there are more pluses, the tap is valid
@@ -95,6 +102,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
       const timeElapsed = Date.now() - timeWhenReady;
       setWinner(player);
       setGameState("complete");
+      console.log(`Player ${player} wins! Tapped when there were more plus signs.`);
       
       // Small delay before completing the game
       setTimeout(() => {
@@ -105,6 +113,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
       const otherPlayer = player === 1 ? 2 : 1;
       setWinner(otherPlayer);
       setGameState("complete");
+      console.log(`Player ${player} tapped too early! Player ${otherPlayer} wins.`);
       
       setTimeout(() => {
         onGameComplete(otherPlayer, 0);
@@ -133,6 +142,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
   // Handle timeout
   useEffect(() => {
     if (timeRemaining <= 0 && gameState === "playing") {
+      console.log("Time's up in PlusMinus game!");
       setGameState("complete");
       setTimeout(() => {
         onGameComplete(null, maxTime);
@@ -156,8 +166,16 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
     </div>
   );
 
+  // Added a useEffect to properly initialize game when state changes to playing
+  useEffect(() => {
+    if (gameState === "playing") {
+      console.log("Game state changed to playing, initializing...");
+      initGame();
+    }
+  }, [gameState, initGame]);
+
   return (
-    <div className="game-container bg-gradient-to-b from-[#6c4bb0] to-[#53399e]">
+    <div className="game-container bg-gradient-to-b from-purple-300 to-purple-400">
       <GameHeader
         player1Score={player1Score}
         player2Score={player2Score}
