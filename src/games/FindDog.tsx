@@ -64,10 +64,10 @@ const FindDog: React.FC<FindDogProps> = ({
   }, [gameState, maxTime]);
 
   // Start the game
-  const startGame = useCallback(() => {
+  const startGame = () => {
     console.log("Starting game...");
     setGameState("playing");
-  }, []);
+  };
 
   // Effect to initialize the game when it changes to playing state
   useEffect(() => {
@@ -140,16 +140,16 @@ const FindDog: React.FC<FindDogProps> = ({
       
       {gameState === "ready" && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={startGame}>
-          <div className="glass-panel p-6 text-center max-w-xs mx-4 bg-white rounded-xl cartoon-border">
+          <div className="glass-panel p-6 text-center max-w-xs mx-4">
             <div className="text-4xl mb-4">🐼🐶</div>
             <h2 className="text-xl font-bold mb-2">Find the Dog</h2>
-            <p className="text-gray-700 mb-6">
+            <p className="text-muted-foreground mb-6">
               A dog will appear among the pandas. Be the first to tap it!
             </p>
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
-              className="text-gray-500 text-sm font-bold"
+              className="text-muted-foreground text-sm"
             >
               Tap to Start
             </motion.div>
@@ -157,12 +157,12 @@ const FindDog: React.FC<FindDogProps> = ({
         </div>
       )}
       
-      <div className="flex flex-row h-full">
+      <div className="flex flex-col h-full">
         <PlayerSide
           player={1}
           onTap={() => handlePlayerTap(1)}
           disabled={gameState !== "playing"}
-          className="border-r border-black"
+          className="border-b border-black h-1/2"
         >
           <div className="relative w-full h-full overflow-hidden">
             {pandas.slice(0, pandas.length / 2).map(panda => (
@@ -192,7 +192,7 @@ const FindDog: React.FC<FindDogProps> = ({
           player={2}
           onTap={() => handlePlayerTap(2)}
           disabled={gameState !== "playing"}
-          className="border-l border-black"
+          className="border-t border-black h-1/2"
         >
           <div className="relative w-full h-full overflow-hidden">
             {pandas.slice(pandas.length / 2).map(panda => (

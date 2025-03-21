@@ -32,7 +32,7 @@ const FindSad: React.FC<FindSadProps> = ({
 
   // Initialize the game
   const initGame = useCallback(() => {
-    setGameState("ready");
+    console.log("Initializing FindSad game...");
     setTimeRemaining(maxTime);
     setSadPosition(null);
     setWinner(null);
@@ -48,6 +48,7 @@ const FindSad: React.FC<FindSadProps> = ({
     // Set timeout to show the sad face
     const sadDelay = 1500 + Math.random() * 3500; // 1.5-5 seconds
     setTimeout(() => {
+      console.log("Sad face should appear now, gameState:", gameState);
       if (gameState === "playing") {
         const randomPosition = {
           x: Math.random() * 80 + 10,
@@ -55,18 +56,30 @@ const FindSad: React.FC<FindSadProps> = ({
         };
         setSadPosition(randomPosition);
         setStartTime(Date.now());
+        console.log("Sad face positioned at:", randomPosition);
+      } else {
+        console.log("Game not in playing state, sad face won't appear");
       }
     }, sadDelay);
   }, [gameState, maxTime]);
 
   // Start the game
-  const startGame = useCallback(() => {
+  const startGame = () => {
+    console.log("Starting FindSad game...");
     setGameState("playing");
-    initGame();
-  }, [initGame]);
+  };
+
+  // Effect to initialize the game when it changes to playing state
+  useEffect(() => {
+    if (gameState === "playing") {
+      console.log("FindSad game state changed to playing, initializing...");
+      initGame();
+    }
+  }, [gameState, initGame]);
 
   // Handle player tap
   const handlePlayerTap = useCallback((player: Player) => {
+    console.log("Player", player, "tapped. Game state:", gameState, "Sad position:", sadPosition);
     if (gameState !== "playing") return;
     
     // If sad face isn't shown yet, player tapped too early
@@ -77,6 +90,7 @@ const FindSad: React.FC<FindSadProps> = ({
     
     setWinner(player);
     setGameState("complete");
+    console.log("Player", player, "wins! Time elapsed:", timeElapsed);
     
     // Small delay before completing the game
     setTimeout(() => {
@@ -105,6 +119,7 @@ const FindSad: React.FC<FindSadProps> = ({
   // Handle timeout
   useEffect(() => {
     if (timeRemaining <= 0 && gameState === "playing") {
+      console.log("Time's up!");
       setGameState("complete");
       setTimeout(() => {
         onGameComplete(null, maxTime);
@@ -142,12 +157,12 @@ const FindSad: React.FC<FindSadProps> = ({
         </div>
       )}
       
-      <div className="flex flex-row h-full">
+      <div className="flex flex-col h-full">
         <PlayerSide
           player={1}
           onTap={() => handlePlayerTap(1)}
           disabled={gameState !== "playing"}
-          className="border-r border-white/10"
+          className="border-b border-black h-1/2"
         >
           <div className="relative w-full h-full overflow-hidden">
             {faces.slice(0, faces.length / 2).map(face => (
@@ -177,7 +192,7 @@ const FindSad: React.FC<FindSadProps> = ({
           player={2}
           onTap={() => handlePlayerTap(2)}
           disabled={gameState !== "playing"}
-          className="border-l border-white/10"
+          className="border-t border-black h-1/2"
         >
           <div className="relative w-full h-full overflow-hidden">
             {faces.slice(faces.length / 2).map(face => (

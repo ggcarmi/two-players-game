@@ -30,7 +30,7 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
   return (
     <div
       className={cn(
-        "player-side h-full relative",
+        "player-side w-full relative",
         isPlayer1 ? "bg-cyan-100" : "bg-red-100",
         disabled ? "opacity-50 pointer-events-none" : "cursor-pointer",
         className
