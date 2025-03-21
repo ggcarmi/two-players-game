@@ -1,13 +1,23 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, X } from "lucide-react";
 import { useGameSession } from "@/hooks/useGameSession";
+import { toast } from "@/components/ui/use-toast";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { gameConfigs, toggleGameEnabled } = useGameSession();
+
+  // Handle game toggle with auto-save
+  const handleToggleGame = (gameId: string) => {
+    toggleGameEnabled(gameId);
+    toast({
+      description: "Settings saved automatically",
+      duration: 1500,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#7758d1] to-[#4f35a3] flex flex-col">
@@ -32,7 +42,7 @@ const Settings = () => {
           >
             <h2 className="text-2xl font-black mb-2 text-white uppercase">Game Selection</h2>
             <p className="text-white/80 mb-6 font-bold">
-              Enable or disable games for your gaming sessions.
+              Enable or disable games for your gaming sessions. Changes are saved automatically.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -47,7 +57,7 @@ const Settings = () => {
                       ? "bg-white"
                       : "bg-gray-200"
                   }`}
-                  onClick={() => toggleGameEnabled(game.id)}
+                  onClick={() => handleToggleGame(game.id)}
                 >
                   <div className="p-4">
                     <div className="flex justify-between items-start">
@@ -84,7 +94,7 @@ const Settings = () => {
             className="cartoon-button bg-green-400"
             onClick={() => navigate(-1)}
           >
-            SAVE SETTINGS
+            BACK TO HOME
           </button>
         </div>
       </div>

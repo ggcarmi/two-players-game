@@ -32,7 +32,7 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
       className={cn(
         "player-side h-full relative",
         isPlayer1 ? "bg-cyan-100" : "bg-red-100",
-        disabled && "opacity-50 pointer-events-none",
+        disabled ? "opacity-50 pointer-events-none" : "cursor-pointer",
         className
       )}
       onClick={handleTap}

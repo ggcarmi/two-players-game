@@ -1,11 +1,14 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGameSession } from "@/hooks/useGameSession";
 import { Player } from "@/types/game";
 import FindDog from "@/games/FindDog";
 import FindSad from "@/games/FindSad";
 import TapFast from "@/games/TapFast";
+import ChangingNumbers from "@/games/ChangingNumbers";
+import CorrectColor from "@/games/CorrectColor";
+import PlusMinus from "@/games/PlusMinus";
 import { Button } from "@/components/ui/button";
 
 const GameScreen = () => {
@@ -20,15 +23,26 @@ const GameScreen = () => {
     isSessionComplete,
     resetSession,
   } = useGameSession();
+  
+  useEffect(() => {
+    if (selectedGames.length === 0) {
+      navigate("/");
+    }
+  }, [selectedGames, navigate]);
 
   const handleGameComplete = (winner: Player | null, timeElapsed: number) => {
+    console.log(`Game complete! Winner: ${winner}, Time: ${timeElapsed}`);
     setWinner(winner, timeElapsed);
   };
 
   // Render the current game component based on the game ID
   const renderGame = () => {
-    if (!currentGame) return null;
+    if (!currentGame) {
+      console.log("No current game to render");
+      return null;
+    }
 
+    console.log(`Rendering game: ${currentGame.id}`);
     const commonProps = {
       onGameComplete: handleGameComplete,
       player1Score,
@@ -45,6 +59,12 @@ const GameScreen = () => {
         return <FindSad {...commonProps} />;
       case "tapFast":
         return <TapFast {...commonProps} />;
+      case "changingNumbers":
+        return <ChangingNumbers {...commonProps} />;
+      case "correctColor":
+        return <CorrectColor {...commonProps} />;
+      case "plusMinus":
+        return <PlusMinus {...commonProps} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
