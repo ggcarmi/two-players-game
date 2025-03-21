@@ -1,7 +1,6 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Player } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -18,42 +17,47 @@ const GameResult: React.FC<GameResultProps> = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
     >
-      <div className="glass-panel p-6 max-w-sm mx-4">
+      <motion.div
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.8 }}
+        className="cartoon-border bg-white p-8 max-w-sm mx-4"
+      >
         <div className="flex flex-col items-center text-center space-y-4">
           {winner ? (
             <div
               className={cn(
-                "flex items-center justify-center w-16 h-16 rounded-full mb-2",
-                winner === 1 ? "bg-player1" : "bg-player2"
+                "flex items-center justify-center w-20 h-20 rounded-full mb-2 border-4 border-black",
+                winner === 1 ? "bg-cyan-500" : "bg-red-500"
               )}
             >
-              <span className="text-white text-2xl font-bold">{winner}</span>
+              <span className="text-white text-3xl font-black">{winner}</span>
             </div>
           ) : (
-            <div className="flex items-center justify-center w-16 h-16 rounded-full mb-2 bg-muted">
-              <span className="text-muted-foreground text-2xl">🤝</span>
+            <div className="flex items-center justify-center w-20 h-20 rounded-full mb-2 bg-yellow-400 border-4 border-black">
+              <span className="text-white text-3xl">🤝</span>
             </div>
           )}
 
-          <h3 className="text-xl font-bold">
+          <h3 className="text-2xl font-black uppercase">
             {winner ? `Player ${winner} Wins!` : "It's a tie!"}
           </h3>
           
-          <p className="text-muted-foreground">{message}</p>
+          <p className="text-gray-700 font-bold">{message}</p>
           
-          <Button 
-            className="mt-4 w-full"
+          <button 
+            className="cartoon-button mt-4 w-full bg-green-400"
             onClick={onContinue}
           >
-            Continue
-          </Button>
+            CONTINUE
+          </button>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 };

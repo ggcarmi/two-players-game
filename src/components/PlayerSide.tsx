@@ -19,12 +19,13 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
   className,
 }) => {
   const isPlayer1 = player === 1;
+  const bgColor = isPlayer1 ? "bg-cyan-500" : "bg-red-500";
 
   return (
     <div
       className={cn(
         "player-side h-full",
-        isPlayer1 ? "player1-side" : "player2-side",
+        isPlayer1 ? "bg-cyan-100" : "bg-red-100",
         disabled && "opacity-50 pointer-events-none",
         className
       )}
@@ -32,8 +33,8 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
     >
       <div className="absolute top-4 left-0 right-0 flex justify-center">
         <div className={cn(
-          "text-sm font-medium px-4 py-1 rounded-full",
-          isPlayer1 ? "bg-player1/20 text-player1" : "bg-player2/20 text-player2"
+          "font-bold px-4 py-1 rounded-full uppercase tracking-wider border-2 border-black",
+          isPlayer1 ? "bg-cyan-500 text-white" : "bg-red-500 text-white"
         )}>
           Player {player}
         </div>

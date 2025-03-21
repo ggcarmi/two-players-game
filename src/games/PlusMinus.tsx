@@ -140,8 +140,24 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
     }
   }, [timeRemaining, gameState, onGameComplete, maxTime]);
 
+  // New symbol components with cartoon styling
+  const PlusSymbol = () => (
+    <div className="w-10 h-10 flex items-center justify-center">
+      <div className="relative">
+        <div className="absolute w-8 h-2 bg-blue-500 rounded-full border-2 border-black"></div>
+        <div className="absolute h-8 w-2 bg-blue-500 rounded-full border-2 border-black"></div>
+      </div>
+    </div>
+  );
+
+  const MinusSymbol = () => (
+    <div className="w-10 h-10 flex items-center justify-center">
+      <div className="w-8 h-2 bg-red-500 rounded-full border-2 border-black"></div>
+    </div>
+  );
+
   return (
-    <div className="game-container">
+    <div className="game-container bg-gradient-to-b from-[#6c4bb0] to-[#53399e]">
       <GameHeader
         player1Score={player1Score}
         player2Score={player2Score}
@@ -153,16 +169,22 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
       
       {gameState === "ready" && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={startGame}>
-          <div className="glass-panel p-6 text-center max-w-xs mx-4">
-            <div className="text-4xl mb-4">➕➖</div>
-            <h2 className="text-xl font-bold mb-2">Plus or Minus</h2>
-            <p className="text-muted-foreground mb-6">
+          <div className="cartoon-border bg-white p-8 text-center max-w-xs mx-4">
+            <div className="text-5xl mb-4 flex justify-center">
+              <div className="relative mr-6">
+                <div className="absolute w-12 h-3 bg-blue-500 rounded-full border-2 border-black"></div>
+                <div className="absolute h-12 w-3 bg-blue-500 rounded-full border-2 border-black"></div>
+              </div>
+              <div className="w-12 h-3 bg-red-500 rounded-full border-2 border-black mt-5"></div>
+            </div>
+            <h2 className="text-2xl font-black mb-4 uppercase">Plus or Minus</h2>
+            <p className="text-gray-700 mb-6 font-bold">
               Tap when there are more plus signs than minus signs on your side!
             </p>
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
-              className="text-muted-foreground text-sm"
+              className="text-gray-500 font-bold uppercase"
             >
               Tap to Start
             </motion.div>
@@ -170,22 +192,25 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
         </div>
       )}
       
-      <div className="flex flex-row h-full">
+      <div className="flex flex-row h-full border-t-4 border-black">
         <PlayerSide
           player={1}
           onTap={() => handlePlayerTap(1)}
           disabled={gameState !== "playing"}
-          className="border-r border-white/10"
+          className="border-r-4 border-black"
         >
           <div className="relative w-full h-full overflow-hidden">
             <div className="grid grid-cols-5 gap-1 p-4 h-full">
               {symbols.slice(0, symbols.length / 2).map((symbol, index) => (
-                <div 
+                <motion.div 
                   key={`p1-${index}`}
-                  className="flex items-center justify-center text-2xl"
+                  initial={symbol === "plus" ? { scale: 0 } : { scale: 1 }}
+                  animate={{ scale: 1, rotate: symbol === "plus" ? [0, 15, -15, 0] : 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-center justify-center"
                 >
-                  {symbol === "plus" ? "➕" : "➖"}
-                </div>
+                  {symbol === "plus" ? <PlusSymbol /> : <MinusSymbol />}
+                </motion.div>
               ))}
             </div>
           </div>
@@ -195,17 +220,20 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
           player={2}
           onTap={() => handlePlayerTap(2)}
           disabled={gameState !== "playing"}
-          className="border-l border-white/10"
+          className="border-l-4 border-black"
         >
           <div className="relative w-full h-full overflow-hidden">
             <div className="grid grid-cols-5 gap-1 p-4 h-full">
               {symbols.slice(symbols.length / 2).map((symbol, index) => (
-                <div 
+                <motion.div 
                   key={`p2-${index}`}
-                  className="flex items-center justify-center text-2xl"
+                  initial={symbol === "plus" ? { scale: 0 } : { scale: 1 }}
+                  animate={{ scale: 1, rotate: symbol === "plus" ? [0, 15, -15, 0] : 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-center justify-center"
                 >
-                  {symbol === "plus" ? "➕" : "➖"}
-                </div>
+                  {symbol === "plus" ? <PlusSymbol /> : <MinusSymbol />}
+                </motion.div>
               ))}
             </div>
           </div>
