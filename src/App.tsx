@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import GameScreen from "./pages/GameScreen";
 import Settings from "./pages/Settings";
+import LanguageProvider from '@/context/LanguageContext';
 
 const queryClient = new QueryClient();
 
@@ -28,16 +28,19 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <GameSessionProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/play" element={<GameScreen />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </GameSessionProvider>
+      <LanguageProvider>
+        <GameSessionProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/play" element={<GameScreen />} />
+              <Route path="/games" element={<Settings />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </GameSessionProvider>
+      </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

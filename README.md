@@ -1,69 +1,66 @@
-# Welcome to your Lovable project
+# משחק לשני שחקנים
 
-## Project info
+פרויקט זה הוא אוסף של משחקי מיני מהירים המיועדים לשני שחקנים המשחקים על אותו מכשיר (טאבלט או טלפון). האפליקציה בנויה כך ששני השחקנים יושבים משני צדי המכשיר - אחד למעלה ואחד למטה.
 
-**URL**: https://lovable.dev/projects/25c58675-4a37-4549-b63f-8d9bcfd77d18
+## איך לשחק
 
-## How can I edit this code?
+1. השחקנים בוחרים את המשחקים שהם רוצים לשחק בהם דרך מסך ההגדרות.
+2. בכל סיבוב, השחקנים מתחרים במשחק מיני אחר.
+3. בסוף כל סבב המשחקים, מוצגים הניקוד הסופי והמנצח הכולל.
 
-There are several ways of editing your application.
+## סוגי משחקים
 
-**Use Lovable**
+המשחק כולל מגוון של משחקי מיני בקטגוריות הבאות:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/25c58675-4a37-4549-b63f-8d9bcfd77d18) and start prompting.
+### משחקי ראייה ותגובה מהירה
+- **מצא את הכלב בין הפנדות** 🐼🐶 – המסך מלא בפנדות קטנות. בשלב מסוים מופיע ביניהן כלב אחד – הראשון שלוחץ עליו מנצח.
+- **מצא את הפרצוף העצוב** 🙂☹️ – המסך מלא בפרצופים חייכנים, אבל פתאום מופיע אחד עצוב. הראשון שלוחץ עליו מנצח.
+- **+ / - מתחלפים** ➕➖ – המסך מלא במינוסים (-) שהופכים בהדרגה לפלוסים (+). הראשון שלוחץ כשיש יותר פלוסים מנצח.
+- **מצא את הצבע הנכון** 🎨 – המסך משנה צבעים במהירות והמילה עליו משתנה. צריך ללחוץ בדיוק כשהצבע והמילה תואמים.
+- **מספרים מתחלפים** 🔢 – מספרים מופיעים במהירות. הראשון שלוחץ על מספר גדול מ-50 מנצח.
 
-Changes made via Lovable will be committed automatically to this repo.
+### משחקי זריזות ולחיצה מהירה
+- **תחרות טפיחות** 👏 – צריך להקיש כמה שיותר מהר תוך 5 שניות. מי שלוחץ יותר – מנצח.
 
-**Use your preferred IDE**
+## רכיבי הליבה של המערכת
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+המשחק בנוי על ארכיטקטורת קומפוננטות משותפות שמאפשרת הוספה קלה של משחקים חדשים ואחידות בממשק.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### רכיבים עיקריים:
 
-Follow these steps:
+- **TwoPlayerGameLayout**: רכיב בסיסי המספק את המבנה הכללי לכל המשחקים, כולל אזורי לחיצה לשני השחקנים, כותרת עם ניקוד וטיימר.
+- **GridGameBoard**: רכיב גנרי המציג לוח משחק מסוג גריד, בו ניתן להציג פריטים שונים (כמו פנדות, פרצופים, וכו').
+- **BaseGridGame**: רכיב בסיסי עבור משחקים המבוססים על גריד, מנהל את הלוגיקה המשותפת של משחקים מסוג זה.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### מערכת ניהול מצב:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **useGameState**: הוק המנהל את מצב המשחק (מוכן, משחק פעיל, הסתיים), טיימרים וקביעת המנצח.
+- **GameSessionContext**: קונטקסט גלובלי המנהל את סשן המשחק כולו, כולל מעקב אחרי הניקוד, משחקים נבחרים ומעבר בין משחקים.
 
-# Step 3: Install the necessary dependencies.
-npm i
+## יתרונות הארכיטקטורה
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1. **פשטות בהוספת משחקים חדשים**: ניתן להוסיף משחקים חדשים בקלות על ידי שימוש ברכיבים המשותפים.
+2. **אחידות בממשק**: כל המשחקים מציגים ממשק אחיד ועקבי, מה שמשפר את חוויית המשתמש.
+3. **קוד נקי ותחזוקתי**: שימוש בהפרדת תחומי אחריות ומבנה מודולרי מאפשר תחזוקה נוחה ומונע שגיאות.
+4. **ביצועים משופרים**: מניעת זליגות זיכרון ושימוש נכון באפקטים.
 
-**Edit a file directly in GitHub**
+## איך להוסיף משחק חדש
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+לפיתוח משחק חדש:
 
-**Use GitHub Codespaces**
+1. **משחק מבוסס גריד**: השתמשו ב-`BaseGridGame` ותגדירו את התוכן הייחודי של הגריד והתנהגותו.
+2. **משחק אחר**: השתמשו ב-`TwoPlayerGameLayout` ויישמו את לוגיקת המשחק הייחודית.
+3. **הוסיפו את המשחק לרשימת המשחקים**: עדכנו את `games.ts` עם הגדרות המשחק החדש.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## התאמות שבוצעו
 
-## What technologies are used for this project?
+1. **התאמה לרספונסיביות**: המשחק מותאם למסכים בגדלים שונים.
+2. **מצב RTL**: תמיכה בשפה העברית ובכיוון טקסט מימין לשמאל.
+3. **עיצוב משופר**: כפתורים גדולים לשחקנים, טקסט ברור ובולט.
+4. **הגדרות זמן**: אפשרות להתאים את זמן המשחק לכל משחק בנפרד.
 
-This project is built with .
+## טיפים לפיתוח נוסף
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/25c58675-4a37-4549-b63f-8d9bcfd77d18) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- **הוספת אנימציות**: ניתן להוסיף אנימציות נוספות באמצעות Framer Motion.
+- **משחקי רשת**: אפשר להרחיב את התשתית כדי לאפשר משחק רב-משתתפים ברשת.
+- **שמירת שיאים**: ניתן להוסיף מערכת לשמירת שיאים אישיים.

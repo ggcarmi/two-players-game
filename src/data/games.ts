@@ -1,7 +1,7 @@
 
 import { GameConfig } from "../types/game";
 
-export const allGames: GameConfig[] = [
+export const games: GameConfig[] = [
   {
     id: "findDog",
     name: "Find the Dog",
@@ -53,7 +53,7 @@ export const allGames: GameConfig[] = [
 ];
 
 export const getRandomGames = (count = 6): GameConfig[] => {
-  const enabledGames = allGames.filter(game => game.enabled);
+  const enabledGames = games.filter(game => game.enabled);
   const shuffled = [...enabledGames].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, Math.min(count, enabledGames.length));
 };

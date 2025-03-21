@@ -1,92 +1,137 @@
-
-import { useState, useEffect, useCallback } from "react";
-import { GameConfig, GameResult, SessionState, Player } from "../types/game";
-import { getDefaultSelectedGames, allGames } from "../data/games";
+import { useState, useEffect } from "react";
+import { GameConfig, Player, GameResult } from "@/types/game";
+import { games } from "@/data/games";
 
 export const useGameSession = () => {
-  const [state, setState] = useState<SessionState>({
-    gameConfigs: allGames,
-    selectedGames: getDefaultSelectedGames(),
-    currentGameIndex: 0,
-    player1Score: 0,
-    player2Score: 0,
-    results: [],
-    isSessionComplete: false,
+  // Load game configs from localStorage or use defaults
+  const [gameConfigs, setGameConfigs] = useState<GameConfig[]>(() => {
+    const savedConfigs = localStorage.getItem('gameConfigs');
+    return savedConfigs ? JSON.parse(savedConfigs) : games;
   });
+  const [selectedGames, setSelectedGames] = useState<string[]>([]);
+  const [currentGameIndex, setCurrentGameIndex] = useState(0);
+  const [player1Score, setPlayer1Score] = useState(0);
+  const [player2Score, setPlayer2Score] = useState(0);
+  const [results, setResults] = useState<GameResult[]>([]);
+  const [isSessionComplete, setIsSessionComplete] = useState(false);
 
-  // Determine the current game configuration based on the current index
-  const currentGame = useCallback(() => {
-    if (state.currentGameIndex >= state.selectedGames.length) {
-      return null;
+  // Initialize selected games on mount and when gameConfigs change
+  useEffect(() => {
+    const enabledGames = gameConfigs.filter(game => game.enabled).map(game => game.id);
+    setSelectedGames(enabledGames);
+  }, [gameConfigs]);
+  
+  // Ensure game list updates at the beginning of each game session
+  useEffect(() => {
+    if (currentGameIndex === 0 && !isSessionComplete) {
+      const enabledGames = gameConfigs.filter(game => game.enabled).map(game => game.id);
+      setSelectedGames(enabledGames);
+    }
+  }, [currentGameIndex, isSessionComplete, gameConfigs]);
+  
+  // Check for force reload flag from home screen
+  useEffect(() => {
+    const forceReload = localStorage.getItem('forceGameConfigReload');
+    if (forceReload === 'true') {
+      // Clear the flag
+      localStorage.removeItem('forceGameConfigReload');
+      
+      // Reload game configs from localStorage
+      const savedConfigs = localStorage.getItem('gameConfigs');
+      if (savedConfigs) {
+        const configs = JSON.parse(savedConfigs);
+        setGameConfigs(configs);
+        
+        // Update selected games based on enabled status
+        const enabledGames = configs.filter(game => game.enabled).map(game => game.id);
+        setSelectedGames(enabledGames);
+      }
+    }
+  }, []);
+
+  const currentGame = selectedGames.length > 0 && currentGameIndex < selectedGames.length
+    ? gameConfigs.find(game => game.id === selectedGames[currentGameIndex])
+    : null;
+
+  const setWinner = (winner: Player | null, timeElapsed: number) => {
+    if (winner) {
+      if (winner === 1) setPlayer1Score(prev => prev + 1);
+      if (winner === 2) setPlayer2Score(prev => prev + 1);
+    }
+
+    setResults(prev => [...prev, {
+      winner,
+      player1Score,
+      player2Score,
+      timeElapsed
+    }]);
+
+    if (currentGameIndex + 1 >= selectedGames.length) {
+      setIsSessionComplete(true);
+    } else {
+      setCurrentGameIndex(prev => prev + 1);
+    }
+  };
+
+  const resetSession = (newSelectedGames?: string[]) => {
+    // Reload game configs from localStorage
+    const savedConfigs = localStorage.getItem('gameConfigs');
+    if (savedConfigs) {
+      const configs = JSON.parse(savedConfigs);
+      setGameConfigs(configs);
     }
     
-    const currentGameId = state.selectedGames[state.currentGameIndex];
-    return state.gameConfigs.find(game => game.id === currentGameId) || null;
-  }, [state.currentGameIndex, state.selectedGames, state.gameConfigs]);
+    setCurrentGameIndex(0);
+    setPlayer1Score(0);
+    setPlayer2Score(0);
+    setResults([]);
+    setIsSessionComplete(false);
+    if (newSelectedGames) {
+      setSelectedGames(newSelectedGames);
+    }
+  };
 
-  // Record the result of a completed game
-  const recordGameResult = useCallback((result: GameResult) => {
-    setState(prev => {
-      const newPlayer1Score = prev.player1Score + (result.winner === 1 ? 1 : 0);
-      const newPlayer2Score = prev.player2Score + (result.winner === 2 ? 1 : 0);
-      const newResults = [...prev.results, result];
-      const newIndex = prev.currentGameIndex + 1;
-      const isComplete = newIndex >= prev.selectedGames.length;
-
-      return {
-        ...prev,
-        player1Score: newPlayer1Score,
-        player2Score: newPlayer2Score,
-        results: newResults,
-        currentGameIndex: newIndex,
-        isSessionComplete: isComplete,
-      };
-    });
-  }, []);
-
-  // Set the winner of the current game
-  const setWinner = useCallback((winner: Player | null, timeElapsed: number) => {
-    const result: GameResult = {
-      winner,
-      player1Score: winner === 1 ? 1 : 0,
-      player2Score: winner === 2 ? 1 : 0,
-      timeElapsed,
-    };
-    recordGameResult(result);
-  }, [recordGameResult]);
-
-  // Reset the session to start a new set of games
-  const resetSession = useCallback((selectedGames = getDefaultSelectedGames()) => {
-    setState({
-      gameConfigs: allGames,
-      selectedGames,
-      currentGameIndex: 0,
-      player1Score: 0,
-      player2Score: 0,
-      results: [],
-      isSessionComplete: false,
-    });
-  }, []);
-
-  // Toggle a game's enabled status
-  const toggleGameEnabled = useCallback((gameId: string) => {
-    setState(prev => {
-      const updatedConfigs = prev.gameConfigs.map(game => 
-        game.id === gameId ? { ...game, enabled: !game.enabled } : game
+  const toggleGameEnabled = (gameId: string) => {
+    setGameConfigs(prev => {
+      const newConfigs = prev.map(game =>
+        game.id === gameId
+          ? { ...game, enabled: !game.enabled }
+          : game
       );
       
-      return {
-        ...prev,
-        gameConfigs: updatedConfigs
-      };
+      // Save to localStorage
+      localStorage.setItem('gameConfigs', JSON.stringify(newConfigs));
+      return newConfigs;
     });
-  }, []);
+  };
+
+  // הוספת פונקציה חדשה לעדכון זמן משחק
+  const updateGameDuration = (gameId: string, duration: number) => {
+    setGameConfigs(prev => {
+      const newConfigs = prev.map(game =>
+        game.id === gameId
+          ? { ...game, duration: duration }
+          : game
+      );
+      
+      // שמירה ב-localStorage
+      localStorage.setItem('gameConfigs', JSON.stringify(newConfigs));
+      return newConfigs;
+    });
+  };
 
   return {
-    ...state,
-    currentGame: currentGame(),
+    gameConfigs,
+    selectedGames,
+    currentGame,
+    currentGameIndex,
+    player1Score,
+    player2Score,
+    results,
+    isSessionComplete,
     setWinner,
     resetSession,
     toggleGameEnabled,
+    updateGameDuration
   };
 };

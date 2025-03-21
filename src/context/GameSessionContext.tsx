@@ -1,4 +1,3 @@
-
 import { createContext, useContext } from "react";
 import { GameConfig, Player, GameResult, SessionState } from "../types/game";
 
@@ -7,6 +6,7 @@ interface GameSessionContextType extends SessionState {
   setWinner: (winner: Player | null, timeElapsed: number) => void;
   resetSession: (selectedGames?: string[]) => void;
   toggleGameEnabled: (gameId: string) => void;
+  updateGameDuration: (gameId: string, duration: number) => void;
 }
 
 export const GameSessionContext = createContext<GameSessionContextType | undefined>(undefined);

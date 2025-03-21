@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Player } from "@/types/game";
-import GameHeader from "@/components/GameHeader";
-import PlayerSide from "@/components/PlayerSide";
-import GameResult from "@/components/GameResult";
+import TwoPlayerGameLayout from "@/components/TwoPlayerGameLayout";
+import { useGameState } from "@/hooks/useGameState";
 
 interface PlusMinusProps {
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
@@ -23,36 +21,44 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
   totalGames,
   maxTime = 15000,
 }) => {
-  const [gameState, setGameState] = useState<"ready" | "playing" | "complete">("ready");
-  const [timeRemaining, setTimeRemaining] = useState(maxTime);
+  // Use the shared game state hook
+  const {
+    gameState,
+    setGameState,
+    timeRemaining,
+    winner,
+    setWinner,
+  } = useGameState({
+    maxTime,
+    onGameComplete
+  });
+
+  // State for tracking symbols
   const [symbols, setSymbols] = useState<Array<"plus" | "minus">>([]);
   const [morePluses, setMorePluses] = useState(false);
-  const [winner, setWinner] = useState<Player | null>(null);
   const [timeWhenReady, setTimeWhenReady] = useState(0);
 
   // Initialize the game with all minus symbols
   const initGame = useCallback(() => {
-    console.log("Initializing PlusMinus game");
-    const initialSymbols = Array(30).fill("minus");
+    const initialSymbols = Array(150).fill("minus"); // 150 symbols for a 10x15 grid
     setSymbols(initialSymbols);
     setMorePluses(false);
     
     // Start changing symbols after a short delay
     const startChangingTime = 2000 + Math.random() * 3000;
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (gameState === "playing") {
-        console.log("Starting to change symbols");
         startChangingSymbols();
       }
     }, startChangingTime);
+    
+    return () => clearTimeout(timeoutId);
   }, [gameState]);
 
   // Start changing symbols from minus to plus
   const startChangingSymbols = useCallback(() => {
-    console.log("Starting symbol changes");
     const interval = setInterval(() => {
       if (gameState !== "playing") {
-        console.log("Game no longer playing, stopping symbol changes");
         clearInterval(interval);
         return;
       }
@@ -71,7 +77,6 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
         const minusCount = newSymbols.filter(s => s === "minus").length;
         
         if (plusCount > minusCount && !morePluses) {
-          console.log(`More pluses now! ${plusCount} pluses, ${minusCount} minuses`);
           setMorePluses(true);
           setTimeWhenReady(Date.now());
         }
@@ -83,18 +88,8 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
     return () => clearInterval(interval);
   }, [gameState, morePluses]);
 
-  // Start the game
-  const startGame = useCallback(() => {
-    console.log("Starting PlusMinus game");
-    setGameState("playing");
-    setTimeRemaining(maxTime);
-    setWinner(null);
-    initGame();
-  }, [initGame, maxTime]);
-
   // Handle player tap
-  const handlePlayerTap = useCallback((player: Player) => {
-    console.log(`Player ${player} tapped. Game state: ${gameState}, More pluses: ${morePluses}`);
+  const onPlayerAction = useCallback((player: Player) => {
     if (gameState !== "playing") return;
     
     // If there are more pluses, the tap is valid
@@ -102,7 +97,6 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
       const timeElapsed = Date.now() - timeWhenReady;
       setWinner(player);
       setGameState("complete");
-      console.log(`Player ${player} wins! Tapped when there were more plus signs.`);
       
       // Small delay before completing the game
       setTimeout(() => {
@@ -113,165 +107,72 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
       const otherPlayer = player === 1 ? 2 : 1;
       setWinner(otherPlayer);
       setGameState("complete");
-      console.log(`Player ${player} tapped too early! Player ${otherPlayer} wins.`);
       
       setTimeout(() => {
         onGameComplete(otherPlayer, 0);
       }, 2000);
     }
-  }, [gameState, morePluses, onGameComplete, timeWhenReady]);
+  }, [gameState, morePluses, onGameComplete, timeWhenReady, setWinner, setGameState]);
 
-  // Timer logic
-  useEffect(() => {
-    if (gameState !== "playing") return;
-    
-    const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 0) {
-          clearInterval(interval);
-          setGameState("complete");
-          return 0;
-        }
-        return prev - 100;
-      });
-    }, 100);
-    
-    return () => clearInterval(interval);
-  }, [gameState]);
-
-  // Handle timeout
-  useEffect(() => {
-    if (timeRemaining <= 0 && gameState === "playing") {
-      console.log("Time's up in PlusMinus game!");
-      setGameState("complete");
-      setTimeout(() => {
-        onGameComplete(null, maxTime);
-      }, 2000);
-    }
-  }, [timeRemaining, gameState, onGameComplete, maxTime]);
-
-  // New symbol components with cartoon styling
-  const PlusSymbol = () => (
-    <div className="w-10 h-10 flex items-center justify-center">
-      <div className="relative">
-        <div className="absolute w-8 h-2 bg-blue-500 rounded-full border-2 border-black"></div>
-        <div className="absolute h-8 w-2 bg-blue-500 rounded-full border-2 border-black"></div>
-      </div>
-    </div>
-  );
-
-  const MinusSymbol = () => (
-    <div className="w-10 h-10 flex items-center justify-center">
-      <div className="w-8 h-2 bg-red-500 rounded-full border-2 border-black"></div>
-    </div>
-  );
-
-  // Added a useEffect to properly initialize game when state changes to playing
+  // Initialize the game when the game state changes to playing
   useEffect(() => {
     if (gameState === "playing") {
-      console.log("Game state changed to playing, initializing...");
-      initGame();
+      const cleanup = initGame();
+      return cleanup;
     }
   }, [gameState, initGame]);
 
-  return (
-    <div className="game-container bg-gradient-to-b from-purple-300 to-purple-400">
-      <GameHeader
-        player1Score={player1Score}
-        player2Score={player2Score}
-        currentGame={currentGame}
-        totalGames={totalGames}
-        timerValue={timeRemaining}
-        maxTime={maxTime}
-      />
-      
-      {gameState === "ready" && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={startGame}>
-          <div className="cartoon-border bg-white p-8 text-center max-w-xs mx-4">
-            <div className="text-5xl mb-4 flex justify-center">
-              <div className="relative mr-6">
-                <div className="absolute w-12 h-3 bg-blue-500 rounded-full border-2 border-black"></div>
-                <div className="absolute h-12 w-3 bg-blue-500 rounded-full border-2 border-black"></div>
-              </div>
-              <div className="w-12 h-3 bg-red-500 rounded-full border-2 border-black mt-5"></div>
-            </div>
-            <h2 className="text-2xl font-black mb-4 uppercase">Plus or Minus</h2>
-            <p className="text-gray-700 mb-6 font-bold">
-              Tap when there are more plus signs than minus signs on your side!
-            </p>
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="text-gray-500 font-bold uppercase"
-            >
-              Tap to Start
-            </motion.div>
-          </div>
-        </div>
-      )}
-      
-      <div className="flex flex-row h-full border-t-4 border-black">
-        <PlayerSide
-          player={1}
-          onTap={() => handlePlayerTap(1)}
-          disabled={gameState !== "playing"}
-          className="border-r-4 border-black"
-        >
-          <div className="relative w-full h-full overflow-hidden">
-            <div className="grid grid-cols-5 gap-1 p-4 h-full">
-              {symbols.slice(0, symbols.length / 2).map((symbol, index) => (
-                <motion.div 
-                  key={`p1-${index}`}
-                  initial={symbol === "plus" ? { scale: 0 } : { scale: 1 }}
-                  animate={{ scale: 1, rotate: symbol === "plus" ? [0, 15, -15, 0] : 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex items-center justify-center"
-                >
-                  {symbol === "plus" ? <PlusSymbol /> : <MinusSymbol />}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </PlayerSide>
-        
-        <PlayerSide
-          player={2}
-          onTap={() => handlePlayerTap(2)}
-          disabled={gameState !== "playing"}
-          className="border-l-4 border-black"
-        >
-          <div className="relative w-full h-full overflow-hidden">
-            <div className="grid grid-cols-5 gap-1 p-4 h-full">
-              {symbols.slice(symbols.length / 2).map((symbol, index) => (
-                <motion.div 
-                  key={`p2-${index}`}
-                  initial={symbol === "plus" ? { scale: 0 } : { scale: 1 }}
-                  animate={{ scale: 1, rotate: symbol === "plus" ? [0, 15, -15, 0] : 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex items-center justify-center"
-                >
-                  {symbol === "plus" ? <PlusSymbol /> : <MinusSymbol />}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </PlayerSide>
-      </div>
-      
-      <AnimatePresence>
-        {gameState === "complete" && (
-          <GameResult
-            winner={winner}
-            message={
-              morePluses
-                ? winner ? "Tapped first when there were more pluses!" : "Time's up! No one tapped in time."
-                : winner ? "The other player tapped too early!" : "Time's up!"
-            }
-            onContinue={() => onGameComplete(winner, maxTime - timeRemaining)}
-          />
-        )}
-      </AnimatePresence>
+  // Symbol components using emojis
+  const PlusSymbol = () => (
+    <div className="w-8 h-8 flex items-center justify-center">
+      <span className="text-2xl">➕</span>
     </div>
+  );
+  
+  const MinusSymbol = () => (
+    <div className="w-8 h-8 flex items-center justify-center">
+      <span className="text-2xl">➖</span>
+    </div>
+  );
+
+  return (
+    <TwoPlayerGameLayout
+      gameState={gameState}
+      setGameState={setGameState}
+      player1Score={player1Score}
+      player2Score={player2Score}
+      currentGame={currentGame}
+      totalGames={totalGames}
+      timeRemaining={timeRemaining}
+      maxTime={maxTime}
+      winner={winner}
+      resultMessage={
+        morePluses
+          ? winner ? "Tapped first when there were more pluses!" : "Time's up! No one tapped in time."
+          : winner ? "The other player tapped too early!" : "Time's up!"
+      }
+      onPlayerAction={onPlayerAction}
+      startScreenTitle="Plus or Minus"
+      startScreenDescription="Tap when there are more plus signs than minus signs on your side!"
+      startScreenIcon="➕➖"
+      onGameComplete={onGameComplete}
+    >
+      <div className="relative w-full h-full overflow-hidden p-2 bg-gradient-to-b from-purple-300 to-purple-400">
+        <div className="grid grid-cols-10 gap-1 w-full">
+          {symbols.map((symbol, index) => (
+            <motion.div 
+              key={`symbol-${index}`}
+              initial={symbol === "plus" ? { scale: 0 } : { scale: 1 }}
+              animate={{ scale: 1, rotate: symbol === "plus" ? [0, 15, -15, 0] : 0 }}
+              transition={{ duration: 0.4 }}
+              className="aspect-square flex items-center justify-center"
+            >
+              {symbol === "plus" ? <PlusSymbol /> : <MinusSymbol />}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </TwoPlayerGameLayout>
   );
 };
 
