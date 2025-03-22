@@ -30,24 +30,33 @@ const GridGameBoard: React.FC<GridGameBoardProps> = ({
 }) => {
   return (
     <div className={cn(
-      "w-full h-full flex items-center justify-center p-0", // הסרת הפדינג
+      "w-full h-full flex items-center justify-center p-0 m-0", // הסרת הפדינג והמרווח
       className
     )}>
       <div 
         className={cn(
-          "grid w-full h-full", 
-          `grid-cols-${columns}`
+          "grid", // Remove w-full and h-full to avoid unnecessary stretching
+          `grid-cols-${columns}`,
+          "place-items-stretch", // Stretch items to fill available space
         )}
+        // style={{ 
+        //   gridTemplateRows: `repeat(${Math.ceil(items.length / columns)}, 1fr)`, // Dynamically size rows to match columns
+        //   gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        //   gap: `0px`, // Remove all gaps
+        //   height: "100%", // Ensure grid container fills the parent height
+        //   width: "100%" // Ensure grid container fills the parent width
+        // }}
         style={{ 
-          gridTemplateColumns: `repeat(${columns}, 1fr)`,
-          gap: `${gap}px` // אפס מרווח
+            gridTemplateRows: `repeat(${items.length / columns}, 1fr)`, // Dynamically size rows to match columns
+            gridTemplateColumns: `repeat(${columns}, 1fr)`,
+            gap: `0px` // Ensure no gaps between items
         }}
       >
         {items.map((item) => (
           <div
             key={`grid-item-${item.id}`}
             className={cn(
-              "aspect-square flex items-center justify-center p-0 m-0", // הסרת מרווחים פנימיים וחיצוניים
+              "aspect-square flex items-center justify-center p-0 m-0 w-full h-full", // Ensure grid items stretch fully
               item.onClick ? "cursor-pointer" : "",
               // התאמת גודל אייקונים לפי גודל מסך
               "text-[calc(min(4vw,4vh))]", // גודל אדפטיבי לרוחב המסך

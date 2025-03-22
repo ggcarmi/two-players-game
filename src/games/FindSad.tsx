@@ -49,7 +49,12 @@ const FindSad: React.FC<FindSadProps> = ({
       renderRegularItem={() => <span style={{ fontSize: '1em' }}>🙂</span>}
       // תוכן אלמנט מיוחד - פרצוף עצוב באותו גודל בדיוק
       renderSpecialItem={() => <span style={{ fontSize: '1em' }}>☹️</span>}
-      addSpecialItem={addSadFace}
+      addSpecialItem={(availablePositions) => {
+        if (availablePositions.length === 0) return null;
+        const randomIndex = Math.floor(Math.random() * availablePositions.length);
+        setSadPosition(availablePositions[randomIndex]);
+        return availablePositions[randomIndex];
+      }}
       delayBeforeAddingSpecial={2000} // המתנה של 2 שניות לפני הוספת הפרצוף העצוב
       startScreenTitle={t('findSad')}
       startScreenDescription={t('findSadDesc')}

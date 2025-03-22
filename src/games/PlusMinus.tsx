@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Player } from "@/types/game";
 import TwoPlayerGameLayout from "@/components/TwoPlayerGameLayout";
 import { useGameState } from "@/hooks/useGameState";
+import BaseGridGame from "@/components/BaseGridGame";
 
 interface PlusMinusProps {
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
@@ -136,43 +137,31 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
   );
 
   return (
-    <TwoPlayerGameLayout
-      gameState={gameState}
-      setGameState={setGameState}
+    <BaseGridGame
       player1Score={player1Score}
       player2Score={player2Score}
       currentGame={currentGame}
       totalGames={totalGames}
-      timeRemaining={timeRemaining}
       maxTime={maxTime}
-      winner={winner}
-      resultMessage={
-        morePluses
-          ? winner ? "Tapped first when there were more pluses!" : "Time's up! No one tapped in time."
-          : winner ? "The other player tapped too early!" : "Time's up!"
-      }
-      onPlayerAction={onPlayerAction}
+      columns={10}
+      rows={15}
+      gap={0}
+      renderRegularItem={() => <span style={{ fontSize: '1em' }}>➖</span>}
+      renderSpecialItem={() => <span style={{ fontSize: '1em' }}>➕</span>}
+      addSpecialItem={(availablePositions) => {
+        const randomIndex = Math.floor(Math.random() * availablePositions.length);
+        return availablePositions[randomIndex];
+      }}
       startScreenTitle="Plus or Minus"
       startScreenDescription="Tap when there are more plus signs than minus signs on your side!"
       startScreenIcon="➕➖"
+      resultMessages={{
+        success: "Tapped first when there were more pluses!",
+        failure: "The other player tapped too early!",
+        timeout: "Time's up! No one tapped in time."
+      }}
       onGameComplete={onGameComplete}
-    >
-      <div className="relative w-full h-full overflow-hidden p-2 bg-gradient-to-b from-purple-300 to-purple-400">
-        <div className="grid grid-cols-10 gap-1 w-full">
-          {symbols.map((symbol, index) => (
-            <motion.div 
-              key={`symbol-${index}`}
-              initial={symbol === "plus" ? { scale: 0 } : { scale: 1 }}
-              animate={{ scale: 1, rotate: symbol === "plus" ? [0, 15, -15, 0] : 0 }}
-              transition={{ duration: 0.4 }}
-              className="aspect-square flex items-center justify-center"
-            >
-              {symbol === "plus" ? <PlusSymbol /> : <MinusSymbol />}
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </TwoPlayerGameLayout>
+    />
   );
 };
 

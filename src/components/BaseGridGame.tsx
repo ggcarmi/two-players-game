@@ -33,6 +33,8 @@ interface BaseGridGameProps {
   resultMessages: ResultMessages;
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
   bgClassName?: string;
+  defaultItemContent?: string;
+  specialItemContent?: string;
 }
 
 const BaseGridGame: React.FC<BaseGridGameProps> = ({
@@ -43,7 +45,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
   maxTime = 10000,
   columns,
   rows,
-  gap = 0, // ברירת מחדל ללא מרווח בין האלמנטים
+  gap = 0, // Default gap between grid items is 0
   specialItemPosition,
   renderRegularItem,
   renderSpecialItem,
@@ -214,7 +216,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
         <GridGameBoard 
           items={items} 
           columns={columns} 
-          gap={gap}
+          gap={0} // Set gap to 0 to ensure grid items touch each other
           animateSpecialItems={true}
         />
       </div>
