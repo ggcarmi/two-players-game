@@ -66,6 +66,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
   const [items, setItems] = useState<GridItem[]>([]);
   const [specialItem, setSpecialItem] = useState<number | null>(null);
   const [timeWhenSpecialAppeared, setTimeWhenSpecialAppeared] = useState<number | null>(null);
+  const [winConditionMet, setWinConditionMet] = useState(false);
   const { t } = useLanguage();
   const [resultMessage, setResultMessage] = useState<string>("");
   const [completeTimeElapsed, setCompleteTimeElapsed] = useState<number>(0);
@@ -93,12 +94,16 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
     const totalItems = rows * columns;
     const newItems: GridItem[] = [];
 
+    // Four possible rotation angles: 0, 90, 180, 270 degrees
+    const rotationAngles = [0, 90, 180, 270];
+
     for (let i = 0; i < totalItems; i++) {
       const row = Math.floor(i / columns);
       const col = i % columns;
       
-      // Generate random rotation angle between -30 and 30 degrees
-      const rotation = Math.floor(Math.random() * 60) - 30;
+      // Pick one of four rotation states
+      const rotationIndex = Math.floor(Math.random() * 4);
+      const rotation = rotationAngles[rotationIndex];
       
       newItems.push({
         id: i,
@@ -117,6 +122,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
     setSpecialItem(null);
     setTimeWhenSpecialAppeared(null);
     setResultMessage("");
+    setWinConditionMet(false);
   }, [columns, rows, renderRegularItem]);
 
   // Add special item after delay
@@ -140,6 +146,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
         if (specialPosition !== null) {
           setSpecialItem(specialPosition);
           setTimeWhenSpecialAppeared(Date.now());
+          setWinConditionMet(true);
           
           // Update items with the special item
           setItems(prevItems => {
@@ -241,15 +248,20 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
     }
   }, [gameState, initGame, resultMessage, timeRemaining, resultMessages]);
 
-  // Rotate items randomly every few seconds for visual interest
+  // Rotate items every 1 second using the 4 fixed states
   useEffect(() => {
     if (gameState !== "playing") return;
+    
+    const rotationAngles = [0, 90, 180, 270];
     
     const rotateInterval = setInterval(() => {
       setItems(prevItems => {
         return prevItems.map(item => {
           if (!item.isSpecial) {
-            const rotation = Math.floor(Math.random() * 60) - 30;
+            // Pick one of four rotation states
+            const rotationIndex = Math.floor(Math.random() * 4);
+            const rotation = rotationAngles[rotationIndex];
+            
             return {
               ...item,
               content: (
@@ -262,12 +274,12 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
           return item;
         });
       });
-    }, 3000); // Rotate every 3 seconds
+    }, 1000); // Rotate every 1 second
     
     return () => clearInterval(rotateInterval);
   }, [gameState, renderRegularItem]);
 
-  console.log("Rendering BaseGridGame with game state:", gameState, "winner:", winner);
+  console.log("Rendering BaseGridGame with game state:", gameState, "winner:", winner, "winConditionMet:", winConditionMet);
 
   return (
     <TwoPlayerGameLayout
@@ -286,6 +298,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
       startScreenDescription={startScreenDescription}
       startScreenIcon={startScreenIcon}
       onGameComplete={onGameComplete}
+      winConditionMet={winConditionMet}
     >
       <div className={`w-full h-full p-0 flex items-center justify-center ${bgClassName}`}>
         <GridGameBoard 

@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { useGameSessionContext } from '@/context/GameSessionContext';
 import { Button } from '@/components/ui/button';
+import { SkipForward } from 'lucide-react';
 
 interface DebugControlsProps {
   isDebugMode: boolean;
@@ -17,14 +19,15 @@ const DebugControls: React.FC<DebugControlsProps> = ({ isDebugMode }) => {
   };
 
   return (
-    <div className="fixed top-0 right-0 z-50 p-2 bg-black/80 text-white rounded-bl-lg">
+    <div className="fixed top-16 right-0 z-50 p-2 bg-black/80 text-white rounded-bl-lg">
       <Button 
         variant="destructive" 
         size="sm" 
         onClick={handleSkipGame}
         className="text-xs"
       >
-        Skip Game (Debug)
+        <SkipForward className="h-4 w-4 mr-1" />
+        Skip Game
       </Button>
     </div>
   );

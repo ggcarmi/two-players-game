@@ -141,27 +141,29 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
 
   // Create grid display for visualization
   const renderGrid = () => {
-    const rows = 6;
-    const cols = 10;
+    const rotationAngles = [0, 90, 180, 270];
     
     return (
       <div className="grid grid-rows-6 grid-cols-10 gap-1 w-full h-full p-2">
-        {gridItems.map((type, index) => (
-          <div 
-            key={index} 
-            className="flex items-center justify-center"
-            style={{ 
-              transform: `rotate(${Math.floor(Math.random() * 20) - 10}deg)`,
-              transition: 'transform 0.5s ease'
-            }}
-          >
-            {type === "plus" ? (
-              <span className="text-xl">➕</span>
-            ) : (
-              <span className="text-xl">➖</span>
-            )}
-          </div>
-        ))}
+        {gridItems.map((type, index) => {
+          // Pick one of four rotation states
+          const rotationIndex = Math.floor(Math.random() * 4);
+          const rotation = rotationAngles[rotationIndex];
+          
+          return (
+            <div 
+              key={index} 
+              className="flex items-center justify-center"
+              style={{ transform: `rotate(${rotation}deg)` }}
+            >
+              {type === "plus" ? (
+                <span className="text-xl">➕</span>
+              ) : (
+                <span className="text-xl">➖</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -187,6 +189,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
       startScreenDescription={t('plusMinusDesc') || "Tap when there are more plus signs than minus signs!"}
       startScreenIcon="➕➖"
       onGameComplete={onGameComplete}
+      winConditionMet={morePluses}
     >
       <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-blue-200 to-purple-200">
         {gameState === "playing" && (

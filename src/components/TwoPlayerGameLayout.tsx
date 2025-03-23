@@ -1,44 +1,29 @@
-
-import React, { ReactNode } from "react";
+import React, { useState, useEffect } from "react";
+import GameHeader from "./GameHeader";
+import PlayerSide from "./PlayerSide";
+import GameResult from "./GameResult";
 import { Player } from "@/types/game";
-import { cn } from "@/lib/utils";
-import GameHeader from "@/components/GameHeader";
-import { AnimatePresence, motion } from "framer-motion";
-import GameResult from "@/components/GameResult";
-import { useLanguage } from "@/context/LanguageContext";
+import { Button } from "./ui/button";
+import { motion } from "framer-motion";
 
-export interface TwoPlayerGameLayoutProps {
-  // Game state
+interface TwoPlayerGameLayoutProps {
   gameState: "ready" | "playing" | "complete";
   setGameState: (state: "ready" | "playing" | "complete") => void;
-  
-  // Player information
   player1Score: number;
   player2Score: number;
   currentGame: number;
   totalGames: number;
-  
-  // Timer information
   timeRemaining: number;
   maxTime: number;
-  
-  // Game result
   winner: Player | null;
-  resultMessage?: string;
-  
-  // Player actions
-  onPlayerAction?: (player: Player) => void;
-  
-  // Children components (game content)
-  children: ReactNode;
-  
-  // Start screen content
+  resultMessage: string;
+  onPlayerAction: (player: Player) => void;
   startScreenTitle: string;
   startScreenDescription: string;
   startScreenIcon?: string;
-  
-  // Callbacks
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
+  children: React.ReactNode;
+  winConditionMet?: boolean;
 }
 
 const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
@@ -51,107 +36,105 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
   timeRemaining,
   maxTime,
   winner,
-  resultMessage = "",
+  resultMessage,
   onPlayerAction,
-  children,
   startScreenTitle,
   startScreenDescription,
-  startScreenIcon = "🎮",
+  startScreenIcon,
   onGameComplete,
+  children,
+  winConditionMet = false,
 }) => {
-  const { t } = useLanguage();
-  
-  const handlePlayerTap = (player: Player) => {
-    if (onPlayerAction && gameState === "playing") {
-      onPlayerAction(player);
+  const [keyPressed, setKeyPressed] = useState<string | null>(null);
+
+  // Key press detection
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setKeyPressed(event.key);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  // Player action based on key press
+  useEffect(() => {
+    if (gameState === "playing" && keyPressed) {
+      if (keyPressed === "q") {
+        onPlayerAction(1);
+        setKeyPressed(null);
+      }
+      if (keyPressed === "p") {
+        onPlayerAction(2);
+        setKeyPressed(null);
+      }
     }
-  };
-
-  const startGame = () => {
-    setGameState("playing");
-  };
-
-  // Calculate button height - adaptive to screen height
-  const playerButtonHeight = "h-[12vh] min-h-[60px] max-h-[100px]";
+  }, [keyPressed, gameState, onPlayerAction]);
 
   return (
-    <div className="game-container flex flex-col h-full">
+    <div className="game-container">
+      {/* Game Header with Scores */}
       <GameHeader
         player1Score={player1Score}
         player2Score={player2Score}
         currentGame={currentGame}
         totalGames={totalGames}
-        timerValue={timeRemaining}
+        timerValue={gameState === "playing" ? timeRemaining : undefined}
         maxTime={maxTime}
+        winConditionMet={winConditionMet}
       />
 
-      <div className="relative flex-1 flex flex-col">
-        {/* Player 1 button - top */}
-        <button
-          className={cn(
-            `w-full ${playerButtonHeight} text-center font-bold text-white border-b-4 border-black text-xl`,
-            "bg-cyan-500 hover:bg-cyan-600 active:bg-cyan-700 transition-colors",
-            gameState !== "playing" ? "opacity-50 pointer-events-none" : "cursor-pointer"
-          )}
-          onClick={() => handlePlayerTap(1)}
-          disabled={gameState !== "playing"}
-        >
-          {t('player1')}
-        </button>
-
-        {/* Game area - middle section */}
-        <div className="flex-1 relative overflow-hidden">
-          {children}
-        </div>
-
-        {/* Player 2 button - bottom */}
-        <button
-          className={cn(
-            `w-full ${playerButtonHeight} text-center font-bold text-white border-t-4 border-black text-xl`,
-            "bg-red-500 hover:bg-red-600 active:bg-red-700 transition-colors",
-            gameState !== "playing" ? "opacity-50 pointer-events-none" : "cursor-pointer"
-          )}
-          onClick={() => handlePlayerTap(2)}
-          disabled={gameState !== "playing"}
-        >
-          {t('player2')}
-        </button>
-
-        {/* Start screen with translations */}
+      <div className="relative w-full h-full flex flex-col bg-black overflow-hidden">
+        {/* Start Screen */}
         {gameState === "ready" && (
           <div 
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" 
-            onClick={startGame}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black bg-opacity-85 text-white p-4 text-center"
+            onClick={() => setGameState("playing")}
           >
-            <div className="glass-panel p-4 sm:p-6 text-center max-w-xs mx-4 border-4 border-white">
-              <div className="text-4xl mb-4">{startScreenIcon}</div>
-              <h2 className="text-xl font-bold mb-2 text-white">{startScreenTitle}</h2>
-              <p className="text-white font-bold mb-6">
-                {startScreenDescription}
-              </p>
-              <button 
-                onClick={startGame}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full animate-bounce"
-              >
-                {t('startGame')}
-              </button>
-            </div>
+            {startScreenIcon && (
+              <div className="text-7xl mb-6">{startScreenIcon}</div>
+            )}
+            <h1 className="text-4xl font-bold mb-4">{startScreenTitle}</h1>
+            <p className="mb-8 max-w-md text-lg">{startScreenDescription}</p>
+            <Button
+              size="lg"
+              className="animate-pulse"
+              onClick={() => setGameState("playing")}
+            >
+              Tap to Start
+            </Button>
           </div>
         )}
 
-        {/* Game completion screen with results */}
-        <AnimatePresence>
-          {gameState === "complete" && (
-            <GameResult
-              winner={winner}
-              message={resultMessage}
-              onContinue={() => {
-                console.log("Continuing to next game with winner:", winner);
-                onGameComplete(winner, maxTime - timeRemaining);
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {/* Game Content */}
+        <div className="relative flex-1 w-full">{children}</div>
+
+        {/* Player Sides (Buttons at bottom) */}
+        <div className="flex w-full">
+          <PlayerSide
+            player={1}
+            onTap={() => onPlayerAction(1)}
+            disabled={gameState !== "playing"}
+            className="bg-cyan-500 hover:bg-cyan-600"
+          />
+          <PlayerSide
+            player={2}
+            onTap={() => onPlayerAction(2)}
+            disabled={gameState !== "playing"}
+            className="bg-red-500 hover:bg-red-600"
+          />
+        </div>
+
+        {/* Result Screen */}
+        {gameState === "complete" && (
+          <GameResult
+            winner={winner}
+            resultMessage={resultMessage}
+            onContinue={() => onGameComplete(winner, 0)}
+          />
+        )}
       </div>
     </div>
   );
