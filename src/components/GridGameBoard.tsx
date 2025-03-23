@@ -44,7 +44,7 @@ const GridGameBoard: React.FC<GridGameBoardProps> = ({
     setRotations(initialRotations);
   }, [items.length]);
   
-  // Update rotations every 1 second
+  // Update rotations every 1 second (changed from every 1 second)
   useEffect(() => {
     const rotationValues = [0, 90, 180, 270];
     
@@ -52,7 +52,7 @@ const GridGameBoard: React.FC<GridGameBoardProps> = ({
       setRotations(prev => 
         prev.map(() => rotationValues[Math.floor(Math.random() * rotationValues.length)])
       );
-    }, 1000);
+    }, 1000); // Changed to 1 second
     
     return () => clearInterval(interval);
   }, []);
@@ -69,14 +69,14 @@ const GridGameBoard: React.FC<GridGameBoardProps> = ({
         style={{ 
           gridTemplateRows: `repeat(${rows}, 1fr)`,
           gridTemplateColumns: `repeat(${columns}, 1fr)`,
-          gap: `${gap}px`,
+          gap: `0px`, // Forced to 0px
         }}
       >
         {items.map((item, index) => (
           <div
             key={`grid-item-${item.id}`}
             className={cn(
-              "flex items-center justify-center p-0 m-0 w-full h-full", 
+              "flex items-center justify-center p-0 m-0 w-full h-full border-0", 
               item.onClick ? "cursor-pointer" : "",
               "text-[calc(min(4vw,4vh))]",
               itemClassName

@@ -23,7 +23,7 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
   return (
     <button
       className={cn(
-        "w-full py-3 text-center font-bold text-white text-xl",
+        "w-full py-12 text-center font-bold text-white text-xl", // Tripled height with py-12
         isPlayer1 
           ? "bg-cyan-500 hover:bg-cyan-600 active:bg-cyan-700" 
           : "bg-red-500 hover:bg-red-600 active:bg-red-700",

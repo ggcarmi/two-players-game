@@ -76,14 +76,13 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
 
   return (
     <div className="game-container flex flex-col h-full">
-      {/* Restructured layout with Player 2 at the top and Player 1 at the bottom */}
       {/* Player 2 Side (Top) */}
       <PlayerSide
         player={2}
         active={gameState === "playing"}
         onClick={() => onPlayerAction(2)}
         disabled={gameState !== "playing"}
-        className="bg-red-500 hover:bg-red-600 border-b-4 border-black"
+        className="bg-red-500 hover:bg-red-600 border-b-4 border-black z-10"
       />
 
       {/* Game Header with Scores */}
@@ -101,7 +100,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         {/* Start Screen */}
         {gameState === "ready" && (
           <div 
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black bg-opacity-85 text-white p-4 text-center"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black bg-opacity-85 text-white p-4 text-center"
             onClick={() => setGameState("playing")}
           >
             {startScreenIcon && (
@@ -138,7 +137,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         active={gameState === "playing"}
         onClick={() => onPlayerAction(1)}
         disabled={gameState !== "playing"}
-        className="bg-cyan-500 hover:bg-cyan-600 border-t-4 border-black"
+        className="bg-cyan-500 hover:bg-cyan-600 border-t-4 border-black z-10"
       />
     </div>
   );

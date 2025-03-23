@@ -125,20 +125,19 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
     setWinConditionMet(false);
   }, [columns, rows, renderRegularItem]);
 
-  // Add special item after delay
+  // Add special item after delay - IMPROVED FOR GUARANTEED WIN CONDITION
   useEffect(() => {
     if (gameState !== "playing") return;
 
-    // Use delayMin and delayMax if provided, otherwise use delayBeforeAddingSpecial
-    // Ensure the special item appears with enough time for players to react
-    const delay = delayMin && delayMax 
-      ? delayMin + Math.random() * (delayMax - delayMin)
-      : delayBeforeAddingSpecial;
-      
-    // Make sure the delay isn't too long compared to maxTime
-    const safeDelay = Math.min(delay, maxTime * 0.6);
-
-    console.log(`Setting up special item to appear after ${safeDelay}ms`);
+    // Ensure the special item appears within the game time window
+    // Between 20% and 70% of the max time, to give players enough time to react
+    const minDelay = Math.min(maxTime * 0.2, delayMin || maxTime * 0.2);
+    const maxDelay = Math.min(maxTime * 0.7, delayMax || maxTime * 0.7);
+    
+    // Calculate a random delay within our safe window
+    const delay = minDelay + Math.random() * (maxDelay - minDelay);
+    
+    console.log(`Setting up special item to appear after ${delay}ms (within ${minDelay}ms-${maxDelay}ms window)`);
     
     const timeout = setTimeout(() => {
       if (gameState === "playing") {
@@ -171,7 +170,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
           });
         }
       }
-    }, safeDelay);
+    }, delay);
 
     return () => clearTimeout(timeout);
   }, [gameState, addSpecialItem, delayBeforeAddingSpecial, delayMin, delayMax, rows, columns, renderSpecialItem, maxTime]);
@@ -308,7 +307,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
         <GridGameBoard 
           items={items} 
           columns={columns} 
-          gap={gap}
+          gap={0}  // Forced to 0
           animateSpecialItems={true}
         />
       </div>
