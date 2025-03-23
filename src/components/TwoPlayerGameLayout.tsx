@@ -75,7 +75,17 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
   }, [keyPressed, gameState, onPlayerAction]);
 
   return (
-    <div className="game-container">
+    <div className="game-container flex flex-col h-full">
+      {/* Restructured layout with Player 2 at the top and Player 1 at the bottom */}
+      {/* Player 2 Side (Top) */}
+      <PlayerSide
+        player={2}
+        active={gameState === "playing"}
+        onClick={() => onPlayerAction(2)}
+        disabled={gameState !== "playing"}
+        className="bg-red-500 hover:bg-red-600 border-b-4 border-black"
+      />
+
       {/* Game Header with Scores */}
       <GameHeader
         player1Score={player1Score}
@@ -87,7 +97,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         winConditionMet={winConditionMet}
       />
 
-      <div className="relative w-full h-full flex flex-col bg-black overflow-hidden">
+      <div className="relative flex-1 w-full h-full bg-black overflow-hidden">
         {/* Start Screen */}
         {gameState === "ready" && (
           <div 
@@ -110,23 +120,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         )}
 
         {/* Game Content */}
-        <div className="relative flex-1 w-full">{children}</div>
-
-        {/* Player Sides (Buttons at bottom) */}
-        <div className="flex w-full">
-          <PlayerSide
-            player={1}
-            onClick={() => onPlayerAction(1)}
-            disabled={gameState !== "playing"}
-            className="bg-cyan-500 hover:bg-cyan-600"
-          />
-          <PlayerSide
-            player={2}
-            onClick={() => onPlayerAction(2)}
-            disabled={gameState !== "playing"}
-            className="bg-red-500 hover:bg-red-600"
-          />
-        </div>
+        <div className="w-full h-full">{children}</div>
 
         {/* Result Screen */}
         {gameState === "complete" && (
@@ -137,6 +131,15 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
           />
         )}
       </div>
+
+      {/* Player 1 Side (Bottom) */}
+      <PlayerSide
+        player={1}
+        active={gameState === "playing"}
+        onClick={() => onPlayerAction(1)}
+        disabled={gameState !== "playing"}
+        className="bg-cyan-500 hover:bg-cyan-600 border-t-4 border-black"
+      />
     </div>
   );
 };

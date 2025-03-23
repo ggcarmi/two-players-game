@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Player } from "@/types/game";
 import { cn } from "@/lib/utils";
@@ -22,10 +23,11 @@ const PlayerSide: React.FC<PlayerSideProps> = ({
   return (
     <button
       className={cn(
-        "w-full py-4 text-center font-bold text-white text-xl",
+        "w-full py-3 text-center font-bold text-white text-xl",
         isPlayer1 
-          ? "bg-cyan-500 hover:bg-cyan-600 active:bg-cyan-700 border-b-4 border-black" 
-          : "bg-red-500 hover:bg-red-600 active:bg-red-700 border-t-4 border-black",
+          ? "bg-cyan-500 hover:bg-cyan-600 active:bg-cyan-700" 
+          : "bg-red-500 hover:bg-red-600 active:bg-red-700",
+        active && !disabled && "animate-pulse",
         disabled ? "opacity-50 pointer-events-none" : "cursor-pointer",
         className
       )}
