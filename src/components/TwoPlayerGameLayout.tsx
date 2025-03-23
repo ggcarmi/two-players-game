@@ -116,13 +116,13 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         <div className="flex w-full">
           <PlayerSide
             player={1}
-            onAction={() => onPlayerAction(1)}
+            onClick={() => onPlayerAction(1)}
             disabled={gameState !== "playing"}
             className="bg-cyan-500 hover:bg-cyan-600"
           />
           <PlayerSide
             player={2}
-            onAction={() => onPlayerAction(2)}
+            onClick={() => onPlayerAction(2)}
             disabled={gameState !== "playing"}
             className="bg-red-500 hover:bg-red-600"
           />
