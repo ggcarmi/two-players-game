@@ -50,6 +50,7 @@ const FindDog: React.FC<FindDogProps> = ({
       // Grid configuration
       columns={6}
       rows={6}
+      gap={0}
       
       // Game content
       specialItemPosition={specialItemPosition}
@@ -66,9 +67,9 @@ const FindDog: React.FC<FindDogProps> = ({
         timeout: t('noOneDog') || "Time's up! No one found the dog."
       }}
       
-      // Custom timing
+      // Custom timing - ensure it appears within the first half of the game time
       delayMin={1000}
-      delayMax={5000}
+      delayMax={maxTime * 0.5}
       
       // Add special item function
       addSpecialItem={addSpecialItem}

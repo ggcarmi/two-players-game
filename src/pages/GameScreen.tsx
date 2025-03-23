@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGameSessionContext } from "@/context/GameSessionContext";
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import DebugControls from "@/components/DebugControls";
 
 // Set this to true during development, false in production
-const IS_DEBUG_MODE = false;
+const IS_DEBUG_MODE = true;
 
 const GameScreen = () => {
   const navigate = useNavigate();

@@ -130,11 +130,15 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
     if (gameState !== "playing") return;
 
     // Use delayMin and delayMax if provided, otherwise use delayBeforeAddingSpecial
+    // Ensure the special item appears with enough time for players to react
     const delay = delayMin && delayMax 
       ? delayMin + Math.random() * (delayMax - delayMin)
       : delayBeforeAddingSpecial;
+      
+    // Make sure the delay isn't too long compared to maxTime
+    const safeDelay = Math.min(delay, maxTime * 0.6);
 
-    console.log(`Setting up special item to appear after ${delay}ms`);
+    console.log(`Setting up special item to appear after ${safeDelay}ms`);
     
     const timeout = setTimeout(() => {
       if (gameState === "playing") {
@@ -167,10 +171,10 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
           });
         }
       }
-    }, delay);
+    }, safeDelay);
 
     return () => clearTimeout(timeout);
-  }, [gameState, addSpecialItem, delayBeforeAddingSpecial, delayMin, delayMax, rows, columns, renderSpecialItem]);
+  }, [gameState, addSpecialItem, delayBeforeAddingSpecial, delayMin, delayMax, rows, columns, renderSpecialItem, maxTime]);
 
   // Handle item click
   const handleItemClick = useCallback((index: number) => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import GameHeader from "./GameHeader";
 import PlayerSide from "./PlayerSide";
@@ -115,13 +116,13 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         <div className="flex w-full">
           <PlayerSide
             player={1}
-            onTap={() => onPlayerAction(1)}
+            onAction={() => onPlayerAction(1)}
             disabled={gameState !== "playing"}
             className="bg-cyan-500 hover:bg-cyan-600"
           />
           <PlayerSide
             player={2}
-            onTap={() => onPlayerAction(2)}
+            onAction={() => onPlayerAction(2)}
             disabled={gameState !== "playing"}
             className="bg-red-500 hover:bg-red-600"
           />
@@ -131,7 +132,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         {gameState === "complete" && (
           <GameResult
             winner={winner}
-            resultMessage={resultMessage}
+            message={resultMessage}
             onContinue={() => onGameComplete(winner, 0)}
           />
         )}

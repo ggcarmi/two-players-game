@@ -39,7 +39,7 @@ const GridGameBoard: React.FC<GridGameBoardProps> = ({
     )}>
       <div 
         className={cn(
-          "grid w-full h-full place-items-stretch",
+          "grid w-full h-full",
         )}
         style={{ 
           gridTemplateRows: `repeat(${rows}, 1fr)`,
@@ -51,7 +51,7 @@ const GridGameBoard: React.FC<GridGameBoardProps> = ({
           <div
             key={`grid-item-${item.id}`}
             className={cn(
-              "aspect-square flex items-center justify-center p-0 m-0 w-full h-full", 
+              "flex items-center justify-center p-0 m-0 w-full h-full", 
               item.onClick ? "cursor-pointer" : "",
               "text-[calc(min(4vw,4vh))]",
               itemClassName

@@ -71,7 +71,8 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
         if (minusPositions.length === 0) return prevItems;
         
         // Convert 1-3 minus symbols to plus per interval
-        const numToChange = Math.min(Math.floor(Math.random() * 3) + 1, minusPositions.length);
+        // Increase the rate to ensure we get to more pluses before time runs out
+        const numToChange = Math.min(Math.floor(Math.random() * 4) + 2, minusPositions.length);
         const newItems = [...prevItems];
         
         for (let i = 0; i < numToChange; i++) {
@@ -99,10 +100,64 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
         
         return newItems;
       });
-    }, 400);
+    }, 400); // Slightly faster to ensure we get to win condition
     
     return () => clearInterval(interval);
   }, [gameState, morePluses]);
+
+  // Add a guaranteed win condition if we're reaching time limit and no win condition yet
+  useEffect(() => {
+    if (gameState !== "playing" || morePluses) return;
+    
+    // If we're past 70% of the time limit and no win condition yet, force it
+    const timeThreshold = maxTime * 0.7;
+    
+    if (timeRemaining < maxTime - timeThreshold) {
+      const forceWinTimeout = setTimeout(() => {
+        if (!morePluses && gameState === "playing") {
+          console.log("Forcing win condition as time is running out");
+          // Convert enough minuses to pluses to trigger win condition
+          setGridItems(prevItems => {
+            const newItems = [...prevItems];
+            const totalItems = newItems.length;
+            const targetPluses = Math.ceil(totalItems / 2) + 1; // More than half
+            const currentPluses = newItems.filter(item => item === "plus").length;
+            const neededPluses = targetPluses - currentPluses;
+            
+            if (neededPluses > 0) {
+              const minusPositions = newItems
+                .map((item, index) => item === "minus" ? index : -1)
+                .filter(pos => pos !== -1);
+                
+              const numToChange = Math.min(neededPluses, minusPositions.length);
+              
+              for (let i = 0; i < numToChange; i++) {
+                const randomIndex = Math.floor(Math.random() * minusPositions.length);
+                const posToChange = minusPositions[randomIndex];
+                newItems[posToChange] = "plus";
+                minusPositions.splice(randomIndex, 1);
+              }
+              
+              const newPlusCount = newItems.filter(item => item === "plus").length;
+              const newMinusCount = totalItems - newPlusCount;
+              
+              setPlusCount(newPlusCount);
+              setMinusCount(newMinusCount);
+              
+              if (newPlusCount > newMinusCount) {
+                setMorePluses(true);
+                setTimeWhenMorePluses(Date.now());
+              }
+            }
+            
+            return newItems;
+          });
+        }
+      }, timeThreshold / 2);
+      
+      return () => clearTimeout(forceWinTimeout);
+    }
+  }, [gameState, timeRemaining, maxTime, morePluses]);
 
   // Handle player action (tap)
   const onPlayerAction = useCallback((player: Player) => {
@@ -144,7 +199,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
     const rotationAngles = [0, 90, 180, 270];
     
     return (
-      <div className="grid grid-rows-6 grid-cols-10 gap-1 w-full h-full p-2">
+      <div className="grid grid-rows-6 grid-cols-10 gap-0 w-full h-full p-0">
         {gridItems.map((type, index) => {
           // Pick one of four rotation states
           const rotationIndex = Math.floor(Math.random() * 4);
@@ -153,7 +208,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
           return (
             <div 
               key={index} 
-              className="flex items-center justify-center"
+              className="flex items-center justify-center p-0 m-0"
               style={{ transform: `rotate(${rotation}deg)` }}
             >
               {type === "plus" ? (
@@ -191,7 +246,7 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
       onGameComplete={onGameComplete}
       winConditionMet={morePluses}
     >
-      <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-blue-200 to-purple-200">
+      <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-blue-200 to-purple-200 p-0">
         {gameState === "playing" && (
           <>
             <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
