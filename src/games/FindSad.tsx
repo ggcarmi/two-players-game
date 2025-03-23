@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+
+import React, { useState } from "react";
 import { Player } from "@/types/game";
 import BaseGridGame from "@/components/BaseGridGame";
 import { useLanguage } from "@/context/LanguageContext";
@@ -23,39 +24,40 @@ const FindSad: React.FC<FindSadProps> = ({
   const [sadPosition, setSadPosition] = useState<number | null>(null);
   const { t } = useLanguage();
 
-  // פונקציה להוספת הפרצוף העצוב אחרי זמן רנדומלי
-  const addSadFace = useCallback((availablePositions: number[]) => {
-    if (availablePositions.length === 0) return;
+  // Function to add the sad face after random delay
+  const addSadFace = (availablePositions: number[]) => {
+    if (availablePositions.length === 0) return null;
     
-    // בחירת מיקום אקראי מתוך המיקומים הזמינים
-    const randomPosition = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+    // Choose random position for the sad face
+    const randomIndex = Math.floor(Math.random() * availablePositions.length);
+    const position = availablePositions[randomIndex];
     
-    setSadPosition(randomPosition);
-    return Date.now(); // החזרת זמן ההופעה
-  }, []);
+    console.log("Adding sad face at position:", position);
+    setSadPosition(position);
+    
+    return position;
+  };
 
   return (
     <BaseGridGame
+      onGameComplete={onGameComplete}
       player1Score={player1Score}
       player2Score={player2Score}
       currentGame={currentGame}
       totalGames={totalGames}
       maxTime={maxTime}
+      
+      // Grid configuration
       columns={6}
       rows={10}
-      gap={0} // אין מרווח בין האלמנטים
+      gap={0}
+      
+      // Game content
       specialItemPosition={sadPosition}
-      // תוכן אלמנטים רגילים - פרצוף שמח בגודל אחיד
-      renderRegularItem={() => <span style={{ fontSize: '1em' }}>🙂</span>}
-      // תוכן אלמנט מיוחד - פרצוף עצוב באותו גודל בדיוק
-      renderSpecialItem={() => <span style={{ fontSize: '1em' }}>☹️</span>}
-      addSpecialItem={(availablePositions) => {
-        if (availablePositions.length === 0) return null;
-        const randomIndex = Math.floor(Math.random() * availablePositions.length);
-        setSadPosition(availablePositions[randomIndex]);
-        return availablePositions[randomIndex];
-      }}
-      delayBeforeAddingSpecial={2000} // המתנה של 2 שניות לפני הוספת הפרצוף העצוב
+      renderRegularItem={() => <span style={{ fontSize: '1.5em' }}>🙂</span>}
+      renderSpecialItem={() => <span style={{ fontSize: '1.5em' }}>☹️</span>}
+      
+      // Game display
       startScreenTitle={t('findSad')}
       startScreenDescription={t('findSadDesc')}
       startScreenIcon="☹️"
@@ -64,7 +66,13 @@ const FindSad: React.FC<FindSadProps> = ({
         failure: t('tappedTooEarly'),
         timeout: t('noOneSad'),
       }}
-      onGameComplete={onGameComplete}
+      
+      // Custom timing
+      delayMin={1000}
+      delayMax={3000}
+      
+      // Add special item function
+      addSpecialItem={addSadFace}
     />
   );
 };

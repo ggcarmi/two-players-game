@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import { Player } from "@/types/game";
 import TwoPlayerGameLayout from "@/components/TwoPlayerGameLayout";
 import { useGameState } from "@/hooks/useGameState";
-import BaseGridGame from "@/components/BaseGridGame";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface PlusMinusProps {
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
@@ -22,7 +22,8 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
   totalGames,
   maxTime = 15000,
 }) => {
-  // Use the shared game state hook
+  const { t } = useLanguage();
+  
   const {
     gameState,
     setGameState,
@@ -34,77 +35,92 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
     onGameComplete
   });
 
-  // State for tracking symbols
-  const [symbols, setSymbols] = useState<Array<"plus" | "minus">>([]);
+  // States for tracking symbols
+  const [plusCount, setPlusCount] = useState(0);
+  const [minusCount, setMinusCount] = useState(0);
   const [morePluses, setMorePluses] = useState(false);
-  const [timeWhenReady, setTimeWhenReady] = useState(0);
+  const [timeWhenMorePluses, setTimeWhenMorePluses] = useState(0);
+  const [gridItems, setGridItems] = useState<Array<"plus" | "minus">>([]);
 
   // Initialize the game with all minus symbols
   const initGame = useCallback(() => {
-    const initialSymbols = Array(150).fill("minus"); // 150 symbols for a 10x15 grid
-    setSymbols(initialSymbols);
+    const gridSize = 10 * 6; // 10 columns x 6 rows
+    const initialGrid = Array(gridSize).fill("minus" as const);
+    
+    setGridItems(initialGrid);
+    setPlusCount(0);
+    setMinusCount(gridSize);
     setMorePluses(false);
     
-    // Start changing symbols after a short delay
-    const startChangingTime = 2000 + Math.random() * 3000;
-    const timeoutId = setTimeout(() => {
-      if (gameState === "playing") {
-        startChangingSymbols();
-      }
-    }, startChangingTime);
+    console.log("Initialized PlusMinus game with", gridSize, "items");
     
-    return () => clearTimeout(timeoutId);
-  }, [gameState]);
+    return () => {}; // Empty cleanup function
+  }, []);
 
   // Start changing symbols from minus to plus
-  const startChangingSymbols = useCallback(() => {
+  useEffect(() => {
+    if (gameState !== "playing") return;
+    
     const interval = setInterval(() => {
-      if (gameState !== "playing") {
-        clearInterval(interval);
-        return;
-      }
-      
-      setSymbols(prev => {
-        const newSymbols = [...prev];
-        const randomIndex = Math.floor(Math.random() * newSymbols.length);
+      setGridItems(prevItems => {
+        // Find all minus positions
+        const minusPositions = prevItems
+          .map((item, index) => item === "minus" ? index : -1)
+          .filter(pos => pos !== -1);
         
-        // Only change if it's still a minus
-        if (newSymbols[randomIndex] === "minus") {
-          newSymbols[randomIndex] = "plus";
+        if (minusPositions.length === 0) return prevItems;
+        
+        // Convert 1-3 minus symbols to plus per interval
+        const numToChange = Math.min(Math.floor(Math.random() * 3) + 1, minusPositions.length);
+        const newItems = [...prevItems];
+        
+        for (let i = 0; i < numToChange; i++) {
+          const randomIndex = Math.floor(Math.random() * minusPositions.length);
+          const posToChange = minusPositions[randomIndex];
+          newItems[posToChange] = "plus";
+          
+          // Remove this position from available positions
+          minusPositions.splice(randomIndex, 1);
         }
         
-        // Check if there are more pluses than minuses
-        const plusCount = newSymbols.filter(s => s === "plus").length;
-        const minusCount = newSymbols.filter(s => s === "minus").length;
+        // Update counts
+        const newPlusCount = newItems.filter(item => item === "plus").length;
+        const newMinusCount = newItems.length - newPlusCount;
         
-        if (plusCount > minusCount && !morePluses) {
+        setPlusCount(newPlusCount);
+        setMinusCount(newMinusCount);
+        
+        // Check if there are now more pluses than minuses
+        if (newPlusCount > newMinusCount && !morePluses) {
+          console.log("Now more pluses than minuses:", newPlusCount, ">", newMinusCount);
           setMorePluses(true);
-          setTimeWhenReady(Date.now());
+          setTimeWhenMorePluses(Date.now());
         }
         
-        return newSymbols;
+        return newItems;
       });
-    }, 300);
+    }, 400);
     
     return () => clearInterval(interval);
   }, [gameState, morePluses]);
 
-  // Handle player tap
+  // Handle player action (tap)
   const onPlayerAction = useCallback((player: Player) => {
     if (gameState !== "playing") return;
     
-    // If there are more pluses, the tap is valid
     if (morePluses) {
-      const timeElapsed = Date.now() - timeWhenReady;
+      // Player correctly identified more pluses
+      console.log("Player", player, "correctly identified more pluses");
+      const timeElapsed = Date.now() - timeWhenMorePluses;
       setWinner(player);
       setGameState("complete");
       
-      // Small delay before completing the game
       setTimeout(() => {
         onGameComplete(player, timeElapsed);
       }, 2000);
     } else {
-      // If tapped too early (before there are more pluses), the other player wins
+      // Player tapped too early
+      console.log("Player", player, "tapped too early, other player wins");
       const otherPlayer = player === 1 ? 2 : 1;
       setWinner(otherPlayer);
       setGameState("complete");
@@ -113,9 +129,9 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
         onGameComplete(otherPlayer, 0);
       }, 2000);
     }
-  }, [gameState, morePluses, onGameComplete, timeWhenReady, setWinner, setGameState]);
+  }, [gameState, morePluses, timeWhenMorePluses, setWinner, setGameState, onGameComplete]);
 
-  // Initialize the game when the game state changes to playing
+  // Initialize the game when state changes to playing
   useEffect(() => {
     if (gameState === "playing") {
       const cleanup = initGame();
@@ -123,45 +139,73 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
     }
   }, [gameState, initGame]);
 
-  // Symbol components using emojis
-  const PlusSymbol = () => (
-    <div className="w-8 h-8 flex items-center justify-center">
-      <span className="text-2xl">➕</span>
-    </div>
-  );
-  
-  const MinusSymbol = () => (
-    <div className="w-8 h-8 flex items-center justify-center">
-      <span className="text-2xl">➖</span>
-    </div>
-  );
+  // Create grid display for visualization
+  const renderGrid = () => {
+    const rows = 6;
+    const cols = 10;
+    
+    return (
+      <div className="grid grid-rows-6 grid-cols-10 gap-1 w-full h-full p-2">
+        {gridItems.map((type, index) => (
+          <div 
+            key={index} 
+            className="flex items-center justify-center"
+            style={{ 
+              transform: `rotate(${Math.floor(Math.random() * 20) - 10}deg)`,
+              transition: 'transform 0.5s ease'
+            }}
+          >
+            {type === "plus" ? (
+              <span className="text-xl">➕</span>
+            ) : (
+              <span className="text-xl">➖</span>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <BaseGridGame
+    <TwoPlayerGameLayout
+      gameState={gameState}
+      setGameState={setGameState}
       player1Score={player1Score}
       player2Score={player2Score}
       currentGame={currentGame}
       totalGames={totalGames}
+      timeRemaining={timeRemaining}
       maxTime={maxTime}
-      columns={10}
-      rows={15}
-      gap={0}
-      renderRegularItem={() => <span style={{ fontSize: '1em' }}>➖</span>}
-      renderSpecialItem={() => <span style={{ fontSize: '1em' }}>➕</span>}
-      addSpecialItem={(availablePositions) => {
-        const randomIndex = Math.floor(Math.random() * availablePositions.length);
-        return availablePositions[randomIndex];
-      }}
-      startScreenTitle="Plus or Minus"
-      startScreenDescription="Tap when there are more plus signs than minus signs on your side!"
+      winner={winner}
+      resultMessage={
+        morePluses
+          ? winner ? (t('plusMinusSuccess') || "Tapped first when there were more pluses!") : (t('plusMinusTimeout') || "Time's up! No one tapped in time.")
+          : winner ? (t('plusMinusFail') || "The other player tapped too early!") : (t('timeUp') || "Time's up!")
+      }
+      onPlayerAction={onPlayerAction}
+      startScreenTitle={t('plusMinus') || "Plus or Minus"}
+      startScreenDescription={t('plusMinusDesc') || "Tap when there are more plus signs than minus signs!"}
       startScreenIcon="➕➖"
-      resultMessages={{
-        success: "Tapped first when there were more pluses!",
-        failure: "The other player tapped too early!",
-        timeout: "Time's up! No one tapped in time."
-      }}
       onGameComplete={onGameComplete}
-    />
+    >
+      <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-blue-200 to-purple-200">
+        {gameState === "playing" && (
+          <>
+            <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
+              ➕: {plusCount} | ➖: {minusCount}
+            </div>
+            {renderGrid()}
+            <div className="absolute bottom-2 text-sm font-bold text-black bg-white/70 px-3 py-1 rounded-full">
+              {morePluses ? (
+                <span className="text-green-500">{t('tapNow') || "TAP NOW!"}</span>
+              ) : (
+                <span>{t('wait') || "WAIT..."}</span>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </TwoPlayerGameLayout>
   );
 };
 

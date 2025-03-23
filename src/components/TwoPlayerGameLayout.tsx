@@ -1,3 +1,4 @@
+
 import React, { ReactNode } from "react";
 import { Player } from "@/types/game";
 import { cn } from "@/lib/utils";
@@ -70,7 +71,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
     setGameState("playing");
   };
 
-  // חישוב גובה כפתורי שחקן לפי גודל המסך - אדפטיבי לגובה המסך
+  // Calculate button height - adaptive to screen height
   const playerButtonHeight = "h-[12vh] min-h-[60px] max-h-[100px]";
 
   return (
@@ -85,7 +86,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
       />
 
       <div className="relative flex-1 flex flex-col">
-        {/* כפתור שחקן 1 עם גובה אדפטיבי */}
+        {/* Player 1 button - top */}
         <button
           className={cn(
             `w-full ${playerButtonHeight} text-center font-bold text-white border-b-4 border-black text-xl`,
@@ -98,12 +99,12 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
           {t('player1')}
         </button>
 
-        {/* אזור משחק מרכזי - מתאים עצמו לשטח הנותר */}
+        {/* Game area - middle section */}
         <div className="flex-1 relative overflow-hidden">
           {children}
         </div>
 
-        {/* כפתור שחקן 2 עם גובה אדפטיבי */}
+        {/* Player 2 button - bottom */}
         <button
           className={cn(
             `w-full ${playerButtonHeight} text-center font-bold text-white border-t-4 border-black text-xl`,
@@ -116,7 +117,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
           {t('player2')}
         </button>
 
-        {/* מסך פתיחה עם תרגומים מתאימים */}
+        {/* Start screen with translations */}
         {gameState === "ready" && (
           <div 
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" 
@@ -138,13 +139,16 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
           </div>
         )}
 
-        {/* מסך סיום משחק עם תרגומים מתאימים */}
+        {/* Game completion screen with results */}
         <AnimatePresence>
           {gameState === "complete" && (
             <GameResult
               winner={winner}
               message={resultMessage}
-              onContinue={() => onGameComplete(winner, maxTime - timeRemaining)}
+              onContinue={() => {
+                console.log("Continuing to next game with winner:", winner);
+                onGameComplete(winner, maxTime - timeRemaining);
+              }}
             />
           )}
         </AnimatePresence>

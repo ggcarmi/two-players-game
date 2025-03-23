@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Player } from "@/types/game";
 
@@ -34,6 +35,7 @@ export function useGameState({
 
   // Reset game state
   const resetGame = useCallback(() => {
+    console.log("Resetting game state");
     setGameState("ready");
     setTimeRemaining(maxTime);
     setWinner(null);
@@ -43,6 +45,7 @@ export function useGameState({
   // Initialize timer when game starts playing
   useEffect(() => {
     if (gameState === "playing") {
+      console.log("Game started playing, setting start time");
       setStartTime(Date.now());
     }
   }, [gameState]);
@@ -51,27 +54,37 @@ export function useGameState({
   useEffect(() => {
     if (gameState !== "playing") return;
 
+    console.log("Starting game timer with max time:", maxTime);
+    
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
-        if (prev <= 0) {
+        const newTime = prev - 100;
+        if (newTime <= 0) {
+          console.log("Time's up!");
           clearInterval(interval);
           setGameState("complete");
           return 0;
         }
-        return prev - 100;
+        return newTime;
       });
     }, 100);
 
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, maxTime]);
 
   // Handle timeout
   useEffect(() => {
     if (timeRemaining <= 0 && gameState === "playing") {
+      console.log("Game timed out, completing with no winner");
       setGameState("complete");
-      setTimeout(() => {
+      
+      // Ensure we call onGameComplete with null winner after a short delay
+      const timeoutId = setTimeout(() => {
+        console.log("Executing timeout callback after delay");
         onGameComplete(null, maxTime);
       }, timeoutDelay);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [timeRemaining, gameState, onGameComplete, maxTime, timeoutDelay]);
 
@@ -79,14 +92,19 @@ export function useGameState({
   const handlePlayerAction = useCallback((player: Player) => {
     if (gameState !== "playing") return;
     
+    console.log("Player", player, "action received");
     setWinner(player);
     setGameState("complete");
     
     const timeElapsed = Date.now() - startTime;
     
-    setTimeout(() => {
+    // Call onGameComplete after a delay to show the result screen first
+    const timeoutId = setTimeout(() => {
+      console.log("Executing player action callback after delay");
       onGameComplete(player, timeElapsed);
     }, timeoutDelay);
+    
+    return () => clearTimeout(timeoutId);
   }, [gameState, onGameComplete, startTime, timeoutDelay]);
 
   // Helper to calculate elapsed time

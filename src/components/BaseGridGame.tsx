@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Player } from "@/types/game";
@@ -22,11 +23,13 @@ interface BaseGridGameProps {
   columns: number;
   rows: number;
   gap?: number;
-  specialItemPosition: number | null;
+  specialItemPosition?: number | null;
   renderRegularItem: () => React.ReactNode;
   renderSpecialItem: () => React.ReactNode;
-  addSpecialItem: (availablePositions: number[]) => number | void;
+  addSpecialItem: (availablePositions: number[]) => number | null;
   delayBeforeAddingSpecial?: number;
+  delayMin?: number;
+  delayMax?: number;
   startScreenTitle: string;
   startScreenDescription: string;
   startScreenIcon?: string;
@@ -45,12 +48,14 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
   maxTime = 10000,
   columns,
   rows,
-  gap = 0, // Default gap between grid items is 0
+  gap = 0,
   specialItemPosition,
   renderRegularItem,
   renderSpecialItem,
   addSpecialItem,
   delayBeforeAddingSpecial = 2000,
+  delayMin,
+  delayMax,
   startScreenTitle,
   startScreenDescription,
   startScreenIcon,
@@ -59,23 +64,32 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
   bgClassName = "bg-gradient-to-b from-blue-400 to-purple-500",
 }) => {
   const [items, setItems] = useState<GridItem[]>([]);
+  const [specialItem, setSpecialItem] = useState<number | null>(null);
   const [timeWhenSpecialAppeared, setTimeWhenSpecialAppeared] = useState<number | null>(null);
   const { t } = useLanguage();
+  const [resultMessage, setResultMessage] = useState<string>("");
+  const [completeTimeElapsed, setCompleteTimeElapsed] = useState<number>(0);
 
-  // שימוש בהוק המשותף למצב המשחק
+  // Use the shared game state hook
   const {
     gameState,
     setGameState,
     timeRemaining,
     winner,
     setWinner,
+    calculateTimeElapsed,
   } = useGameState({
     maxTime,
-    onGameComplete,
+    onGameComplete: (winner, timeElapsed) => {
+      // This is just a passthrough to make sure we complete properly
+      console.log("Game completing with winner:", winner, "time:", timeElapsed);
+      onGameComplete(winner, timeElapsed);
+    },
   });
 
-  // אתחול המשחק - יצירת הפריטים בגריד
+  // Initialize the game - create grid items
   const initGame = useCallback(() => {
+    console.log("Initializing grid game with", rows, "rows and", columns, "columns");
     const totalItems = rows * columns;
     const newItems: GridItem[] = [];
 
@@ -83,116 +97,177 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
       const row = Math.floor(i / columns);
       const col = i % columns;
       
+      // Generate random rotation angle between -30 and 30 degrees
+      const rotation = Math.floor(Math.random() * 60) - 30;
+      
       newItems.push({
         id: i,
         row,
         col,
-        content: renderRegularItem(),
+        content: (
+          <div style={{ transform: `rotate(${rotation}deg)` }}>
+            {renderRegularItem()}
+          </div>
+        ),
         isSpecial: false,
       });
     }
 
     setItems(newItems);
+    setSpecialItem(null);
     setTimeWhenSpecialAppeared(null);
+    setResultMessage("");
   }, [columns, rows, renderRegularItem]);
 
-  // הוספת פריט מיוחד לאחר השהייה
+  // Add special item after delay
   useEffect(() => {
     if (gameState !== "playing") return;
 
+    // Use delayMin and delayMax if provided, otherwise use delayBeforeAddingSpecial
+    const delay = delayMin && delayMax 
+      ? delayMin + Math.random() * (delayMax - delayMin)
+      : delayBeforeAddingSpecial;
+
+    console.log(`Setting up special item to appear after ${delay}ms`);
+    
     const timeout = setTimeout(() => {
       if (gameState === "playing") {
         const availablePositions = Array.from({ length: rows * columns }, (_, i) => i);
-        const timeAppeared = addSpecialItem(availablePositions);
+        const specialPosition = addSpecialItem(availablePositions);
         
-        if (timeAppeared) {
-          setTimeWhenSpecialAppeared(timeAppeared);
+        console.log("Adding special item at position:", specialPosition);
+        
+        if (specialPosition !== null) {
+          setSpecialItem(specialPosition);
+          setTimeWhenSpecialAppeared(Date.now());
+          
+          // Update items with the special item
+          setItems(prevItems => {
+            return prevItems.map((item, index) => {
+              if (index === specialPosition) {
+                return {
+                  ...item,
+                  content: renderSpecialItem(),
+                  isSpecial: true,
+                  onClick: () => handleItemClick(index),
+                };
+              }
+              return {
+                ...item,
+                onClick: () => handleItemClick(index),
+              };
+            });
+          });
         }
       }
-    }, delayBeforeAddingSpecial);
+    }, delay);
 
     return () => clearTimeout(timeout);
-  }, [gameState, addSpecialItem, delayBeforeAddingSpecial, rows, columns]);
+  }, [gameState, addSpecialItem, delayBeforeAddingSpecial, delayMin, delayMax, rows, columns, renderSpecialItem]);
 
-  // עדכון הפריטים כאשר הפריט המיוחד מופיע
-  useEffect(() => {
-    if (specialItemPosition === null) return;
-
-    setItems(prevItems => {
-      return prevItems.map((item, index) => {
-        if (index === specialItemPosition) {
-          return {
-            ...item,
-            content: renderSpecialItem(),
-            isSpecial: true,
-            onClick: () => handleItemClick(index),
-          };
-        }
-        return {
-          ...item,
-          onClick: () => handleItemClick(index),
-        };
-      });
-    });
-  }, [specialItemPosition, renderSpecialItem]);
-
-  // טיפול בלחיצה על פריט
+  // Handle item click
   const handleItemClick = useCallback((index: number) => {
+    console.log("Item clicked:", index, "Special item:", specialItem);
+    
     if (gameState !== "playing") return;
 
-    // אם לחצו על הפריט המיוחד
-    if (index === specialItemPosition && specialItemPosition !== null) {
+    // If clicked on the special item
+    if (index === specialItem && specialItem !== null) {
       const timeElapsed = timeWhenSpecialAppeared ? Date.now() - timeWhenSpecialAppeared : 0;
+      
+      // Set winner based on which side of the screen was clicked
+      // This will be handled by the TwoPlayerGameLayout based on which player tapped
       setGameState("complete");
-      // הפריט שנלחץ הוא האייטם המיוחד - מעבירים למצב הודעת ניצחון
       setResultMessage(resultMessages.success);
-      // שומרים את הזמן לחישוב התוצאה הסופית
       setCompleteTimeElapsed(timeElapsed);
     } else {
-      // לחיצה על פריט רגיל נחשבת כטעות
+      // Regular item clicked - counts as mistake
       setGameState("complete");
       setResultMessage(resultMessages.failure);
     }
-  }, [gameState, specialItemPosition, timeWhenSpecialAppeared, setGameState, resultMessages]);
+  }, [gameState, specialItem, timeWhenSpecialAppeared, setGameState, resultMessages]);
 
-  // מעקב אחר הודעת תוצאה
-  const [resultMessage, setResultMessage] = useState<string>("");
-  const [completeTimeElapsed, setCompleteTimeElapsed] = useState<number>(0);
+  // Handle timeout - if time runs out and no winner
+  useEffect(() => {
+    if (timeRemaining <= 0 && gameState === "playing") {
+      console.log("Time ran out, completing game with no winner");
+      setGameState("complete");
+      setResultMessage(resultMessages.timeout);
+      setTimeout(() => {
+        onGameComplete(null, maxTime);
+      }, 2000);
+    }
+  }, [timeRemaining, gameState, resultMessages, onGameComplete, maxTime, setGameState]);
 
-  // טיפול בלחיצת שחקן
+  // Handle player action (tap on player button)
   const onPlayerAction = useCallback((player: Player) => {
+    console.log("Player action:", player, "Game state:", gameState, "Special item:", specialItem);
+    
     if (gameState !== "playing") return;
 
-    // אם יש פריט מיוחד, הלחיצה צריכה להיות עליו ולא על הכפתור
-    if (specialItemPosition !== null) return;
+    // If special item is visible, player action should count
+    if (specialItem !== null) {
+      console.log("Special item is visible, player", player, "wins");
+      const timeElapsed = timeWhenSpecialAppeared ? Date.now() - timeWhenSpecialAppeared : 0;
+      setWinner(player);
+      setGameState("complete");
+      setResultMessage(resultMessages.success);
+      
+      setTimeout(() => {
+        onGameComplete(player, timeElapsed);
+      }, 2000);
+    } else {
+      // If tapped before special item appeared, it's a failure
+      console.log("Special item not visible yet, player", player, "loses");
+      const otherPlayer = player === 1 ? 2 : 1;
+      setWinner(otherPlayer);
+      setGameState("complete");
+      setResultMessage(resultMessages.failure);
+      
+      setTimeout(() => {
+        onGameComplete(otherPlayer, 0);
+      }, 2000);
+    }
+  }, [gameState, specialItem, timeWhenSpecialAppeared, setWinner, setGameState, resultMessages, onGameComplete]);
 
-    // אם לחצו לפני שהופיע הפריט המיוחד, זו טעות
-    const otherPlayer = player === 1 ? 2 : 1;
-    setWinner(otherPlayer);
-    setGameState("complete");
-    setResultMessage(resultMessages.failure);
-  }, [gameState, specialItemPosition, setWinner, setGameState, resultMessages]);
-
-  // אתחול המשחק כאשר הוא מתחיל
+  // Initialize game when state changes to playing
   useEffect(() => {
     if (gameState === "playing") {
+      console.log("Game state changed to playing, initializing game");
       initGame();
     } else if (gameState === "complete" && resultMessage === "" && timeRemaining <= 0) {
-      // אם הזמן הסתיים ואין הודעת תוצאה, זה אומר שאף אחד לא מצא את הפריט המיוחד
+      // If time ran out and no result message, no one found the special item
       setResultMessage(resultMessages.timeout);
     }
   }, [gameState, initGame, resultMessage, timeRemaining, resultMessages]);
 
-  // סיום המשחק ושמירת התוצאה
+  // Rotate items randomly every few seconds for visual interest
   useEffect(() => {
-    if (gameState === "complete" && winner !== null) {
-      const timeoutId = setTimeout(() => {
-        onGameComplete(winner, completeTimeElapsed);
-      }, 2000);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [gameState, winner, onGameComplete, completeTimeElapsed]);
+    if (gameState !== "playing") return;
+    
+    const rotateInterval = setInterval(() => {
+      setItems(prevItems => {
+        return prevItems.map(item => {
+          if (!item.isSpecial) {
+            const rotation = Math.floor(Math.random() * 60) - 30;
+            return {
+              ...item,
+              content: (
+                <div style={{ transform: `rotate(${rotation}deg)` }}>
+                  {renderRegularItem()}
+                </div>
+              ),
+            };
+          }
+          return item;
+        });
+      });
+    }, 3000); // Rotate every 3 seconds
+    
+    return () => clearInterval(rotateInterval);
+  }, [gameState, renderRegularItem]);
+
+  console.log("Rendering BaseGridGame with game state:", gameState, "winner:", winner);
 
   return (
     <TwoPlayerGameLayout
@@ -216,7 +291,7 @@ const BaseGridGame: React.FC<BaseGridGameProps> = ({
         <GridGameBoard 
           items={items} 
           columns={columns} 
-          gap={0} // Set gap to 0 to ensure grid items touch each other
+          gap={gap}
           animateSpecialItems={true}
         />
       </div>

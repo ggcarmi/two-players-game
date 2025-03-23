@@ -1,6 +1,8 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Player } from "@/types/game";
 import BaseGridGame from "@/components/BaseGridGame";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface FindDogProps {
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
@@ -19,6 +21,23 @@ const FindDog: React.FC<FindDogProps> = ({
   totalGames,
   maxTime = 10000,
 }) => {
+  const [specialItemPosition, setSpecialItemPosition] = useState<number | null>(null);
+  const { t } = useLanguage();
+  
+  // Function to add special item (dog) after random delay
+  const addSpecialItem = (availablePositions: number[]) => {
+    if (availablePositions.length === 0) return null;
+    
+    // Choose random position for the dog
+    const randomIndex = Math.floor(Math.random() * availablePositions.length);
+    const position = availablePositions[randomIndex];
+    
+    console.log("Adding dog at position:", position);
+    setSpecialItemPosition(position);
+    
+    return position;
+  };
+
   return (
     <BaseGridGame
       onGameComplete={onGameComplete}
@@ -29,35 +48,30 @@ const FindDog: React.FC<FindDogProps> = ({
       maxTime={maxTime}
       
       // Grid configuration
-      columns={10}
-      rows={10}
+      columns={6}
+      rows={6}
       
       // Game content
-      defaultItemContent="🐼"
-      specialItemContent="🐶"
+      specialItemPosition={specialItemPosition}
+      renderRegularItem={() => <span style={{ fontSize: '1.5em' }}>🐼</span>}
+      renderSpecialItem={() => <span style={{ fontSize: '1.5em' }}>🐶</span>}
       
       // Game display
-      startScreenTitle="Find the Dog"
-      startScreenDescription="A dog will appear among the pandas. Be the first to tap it!"
+      startScreenTitle={t('findDog') || "Find the Dog"}
+      startScreenDescription={t('findDogDesc') || "A dog will appear among the pandas. Be the first to tap it!"}
       startScreenIcon="🐼🐶"
       resultMessages={{
-        success: "Found the dog first!",
-        failure: "Your opponent wins! You tapped too early!",
-        timeout: "Time's up! No one found the dog."
+        success: t('foundDogFirst') || "Found the dog first!",
+        failure: t('tappedTooEarly') || "Your opponent wins! You tapped too early!",
+        timeout: t('noOneDog') || "Time's up! No one found the dog."
       }}
       
       // Custom timing
       delayMin={1000}
       delayMax={5000}
       
-      // Render regular item
-      renderRegularItem={() => <span style={{ fontSize: '1em' }}>🐼</span>}
-      
-      addSpecialItem={(availablePositions) => {
-        if (availablePositions.length === 0) return null;
-        const randomIndex = Math.floor(Math.random() * availablePositions.length);
-        return availablePositions[randomIndex];
-      }}
+      // Add special item function
+      addSpecialItem={addSpecialItem}
     />
   );
 };
