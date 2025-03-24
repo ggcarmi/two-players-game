@@ -1,6 +1,12 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Player } from "@/types/game";
+
+// תוספת חדשה - ייצוא קבועים גלובליים לתזמון הופעת פריטים מיוחדים
+export const SPECIAL_ITEM_TIMING = {
+  MIN_PERCENT: 0.2,  // הפריט יופיע לכל הפחות אחרי 20% מזמן המשחק
+  MAX_PERCENT: 0.8,  // הפריט יופיע לכל היותר אחרי 80% מזמן המשחק
+  FORCE_APPEAR: true // אילוץ הופעת פריט מיוחד תמיד
+};
 
 export interface UseGameStateProps {
   maxTime: number;
@@ -18,6 +24,8 @@ export interface GameStateReturn {
   handlePlayerAction: (player: Player) => void;
   resetGame: () => void;
   calculateTimeElapsed: () => number;
+  registerForceCallback: (callback: () => void) => void;
+  emergencyForceSpecialItem: () => void;
 }
 
 /**
@@ -32,6 +40,25 @@ export function useGameState({
   const [timeRemaining, setTimeRemaining] = useState(maxTime);
   const [startTime, setStartTime] = useState(0);
   const [winner, setWinner] = useState<Player | null>(null);
+  
+  // חדש: הוספת התייחסות להופעת פריט מיוחד - מאפשר אכיפה גלובלית
+  const [emergencySpecialItemShown, setEmergencySpecialItemShown] = useState(false);
+  const [forceSpecialItemCallback, setForceSpecialItemCallback] = useState<(() => void) | null>(null);
+
+  // משתמשים יכולים לרשום פונקציה כדי לאלץ הופעת פריט מיוחד
+  const registerForceCallback = useCallback((callback: () => void) => {
+    console.log("Registering emergency callback for forcing special item appearance");
+    setForceSpecialItemCallback(() => callback);
+  }, []);
+
+  // מצב חירום: להופיע פריט מיוחד אם עדיין לא הופיע
+  const emergencyForceSpecialItem = useCallback(() => {
+    if (forceSpecialItemCallback && !emergencySpecialItemShown) {
+      console.log("🚨 EMERGENCY: Forcing special item to appear globally!");
+      forceSpecialItemCallback();
+      setEmergencySpecialItemShown(true);
+    }
+  }, [forceSpecialItemCallback, emergencySpecialItemShown]);
 
   // Reset game state
   const resetGame = useCallback(() => {
@@ -40,6 +67,8 @@ export function useGameState({
     setTimeRemaining(maxTime);
     setWinner(null);
     setStartTime(0);
+    setEmergencySpecialItemShown(false);
+    setForceSpecialItemCallback(null);
   }, [maxTime]);
 
   // Initialize timer when game starts playing
@@ -50,62 +79,56 @@ export function useGameState({
     }
   }, [gameState]);
 
-  // Timer logic
+  // Timer logic - simplified
   useEffect(() => {
     if (gameState !== "playing") return;
 
-    console.log("Starting game timer with max time:", maxTime);
+    console.log("Starting basic game timer with max time:", maxTime);
     
+    const startTime = Date.now();
     const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        const newTime = prev - 100;
-        if (newTime <= 0) {
-          console.log("Time's up!");
-          clearInterval(interval);
-          setGameState("complete");
-          return 0;
-        }
-        return newTime;
-      });
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, maxTime - elapsed);
+      
+      setTimeRemaining(remaining);
+      
+      // אכיפת הופעת פריט מיוחד אם עברנו את נקודת האמצע של המשחק
+      if (elapsed > maxTime * SPECIAL_ITEM_TIMING.MAX_PERCENT * 0.9 && !emergencySpecialItemShown) {
+        console.log(`🚨 CRITICAL: ${elapsed}ms elapsed (${elapsed/maxTime*100}% of game time) - forcing special item to appear now!`);
+        emergencyForceSpecialItem();
+      }
+      
+      if (remaining <= 0) {
+        console.log("Time's up - game over");
+        clearInterval(interval);
+        setGameState("complete");
+        setWinner(null);
+        onGameComplete(null, maxTime);
+      }
     }, 100);
 
     return () => clearInterval(interval);
-  }, [gameState, maxTime]);
+  }, [gameState, maxTime, emergencySpecialItemShown, emergencyForceSpecialItem]);
 
-  // Handle timeout
+  // Handle game completion directly in timer
   useEffect(() => {
-    if (timeRemaining <= 0 && gameState === "playing") {
-      console.log("Game timed out, completing with no winner");
-      setGameState("complete");
-      
-      // Ensure we call onGameComplete with null winner after a short delay
-      const timeoutId = setTimeout(() => {
-        console.log("Executing timeout callback after delay");
-        onGameComplete(null, maxTime);
-      }, timeoutDelay);
-      
-      return () => clearTimeout(timeoutId);
+    if (gameState === "complete" && winner === null && timeRemaining <= 0) {
+      console.log("Game completed due to timeout");
+      onGameComplete(null, maxTime);
     }
-  }, [timeRemaining, gameState, onGameComplete, maxTime, timeoutDelay]);
+  }, [gameState, winner, timeRemaining, onGameComplete, maxTime]);
 
-  // Handle player action during gameplay
+  // Simplified player action handler
   const handlePlayerAction = useCallback((player: Player) => {
     if (gameState !== "playing") return;
     
     console.log("Player", player, "action received");
-    setWinner(player);
-    setGameState("complete");
-    
     const timeElapsed = Date.now() - startTime;
     
-    // Call onGameComplete after a delay to show the result screen first
-    const timeoutId = setTimeout(() => {
-      console.log("Executing player action callback after delay");
-      onGameComplete(player, timeElapsed);
-    }, timeoutDelay);
-    
-    return () => clearTimeout(timeoutId);
-  }, [gameState, onGameComplete, startTime, timeoutDelay]);
+    setWinner(player);
+    setGameState("complete");
+    onGameComplete(player, timeElapsed);
+  }, [gameState, startTime, onGameComplete]);
 
   // Helper to calculate elapsed time
   const calculateTimeElapsed = useCallback(() => {
@@ -121,6 +144,8 @@ export function useGameState({
     setWinner,
     handlePlayerAction,
     resetGame,
-    calculateTimeElapsed
+    calculateTimeElapsed,
+    registerForceCallback,
+    emergencyForceSpecialItem
   };
 }

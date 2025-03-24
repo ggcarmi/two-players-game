@@ -43,17 +43,68 @@ class FindSadRefactored extends AbstractGridGame<FindSadProps> {
   getWinCondition(): WinCondition {
     const { t } = useLanguage();
     return {
-      check: () => this.state.specialItemPosition !== null,
+      check: () => {
+        // תמיד נחזיר אמת אם הסמיילי העצוב הופיע
+        const sadAppeared = this.state.specialItemPosition !== null;
+        console.log(`Checking win condition: sadAppeared=${sadAppeared}`);
+        return sadAppeared;
+      },
       name: t('sadAppeared')
     };
   }
 
   // דריסת מתודת טווח ההשהיה
   getDelayRange(): { min: number; max: number } | null {
-    // קובע זמן הופעה רנדומלי בין 1 ל-5 שניות
-    const minDelay = 1000; // מינימום שנייה אחת
-    const maxDelay = Math.min(5000, (this.props.maxTime || 10000) * 0.5); // מקסימום 5 שניות או 50% מהזמן המקסימלי
+    // תיקון: תמיד יופיע בין 20% ל-50% מזמן המשחק
+    const { maxTime = 10000 } = this.props;
+    const minDelay = maxTime * 0.2; // 20% מזמן המשחק
+    const maxDelay = maxTime * 0.5; // 50% מזמן המשחק
+    
+    console.log(`🛠️ [FindSad] קביעת טווח זמן להופעת סמיילי עצוב: ${minDelay}ms עד ${maxDelay}ms`);
     return { min: minDelay, max: maxDelay };
+  }
+  
+  // תוספת חדשה: כפיית הופעת הפריט המיוחד
+  componentDidMount() {
+    super.componentDidMount();
+    
+    // הגדרת טיימר נוסף שיבטיח הופעת הפריט המיוחד
+    if (this.props.maxTime) {
+      const guaranteedDelay = this.props.maxTime * 0.3; // 30% מזמן המשחק
+      
+      console.log(`🛠️ [FindSad] הגדרת טיימר חירום להופעת סמיילי עצוב אחרי ${guaranteedDelay}ms`);
+      
+      setTimeout(() => {
+        // בדיקה שהמשחק עדיין פעיל ושהפריט המיוחד עדיין לא הופיע
+        if (this.gameState.gameState === "playing" && this.state.specialItemPosition === null) {
+          console.log("🔴 [FindSad] כפיית הופעת סמיילי עצוב דרך טיימר חירום");
+          
+          try {
+            const availablePositions = Array.from(
+              { length: this.props.rows * this.props.columns },
+              (_, i) => i
+            );
+            
+            // בחירת מיקום רנדומלי
+            const randomIndex = Math.floor(Math.random() * availablePositions.length);
+            const position = availablePositions[randomIndex];
+            
+            // עדכון המצב באופן ישיר
+            this.setState({
+              specialItemPosition: position,
+              timeWhenSpecialAppeared: Date.now(),
+              isWinConditionMet: true
+            }, () => {
+              // עדכון הממשק מיד
+              this.updateItemsWithSpecial();
+              console.log(`✅ [FindSad] סמיילי עצוב הופיע בהצלחה במיקום ${position}`);
+            });
+          } catch (error) {
+            console.error("❌ [FindSad] שגיאה בכפיית הופעת סמיילי עצוב:", error);
+          }
+        }
+      }, guaranteedDelay);
+    }
   }
 }
 

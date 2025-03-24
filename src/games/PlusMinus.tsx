@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Player } from "@/types/game";
-import TwoPlayerGameLayout from "@/components/TwoPlayerGameLayout";
-import { useGameState } from "@/hooks/useGameState";
 import { useLanguage } from "@/context/LanguageContext";
+import BaseGridGame from "@/components/BaseGridGame";
+import { IS_DEVELOPMENT_MODE } from "@/components/BaseGridGame";
 
 interface PlusMinusProps {
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
@@ -24,246 +23,99 @@ const PlusMinus: React.FC<PlusMinusProps> = ({
 }) => {
   const { t } = useLanguage();
   
-  const {
-    gameState,
-    setGameState,
-    timeRemaining,
-    winner,
-    setWinner,
-  } = useGameState({
-    maxTime,
-    onGameComplete
-  });
-
-  // States for tracking symbols
-  const [plusCount, setPlusCount] = useState(0);
-  const [minusCount, setMinusCount] = useState(0);
+  // סטייט לעקוב אחרי מצב הפלוסים והמינוסים
   const [morePluses, setMorePluses] = useState(false);
-  const [timeWhenMorePluses, setTimeWhenMorePluses] = useState(0);
-  const [gridItems, setGridItems] = useState<Array<"plus" | "minus">>([]);
+  
+  // סטייט לעקוב אחרי מיקום מיוחד (דמה במשחק הזה)
+  const [specialItemPosition, setSpecialItemPosition] = useState<number | null>(null);
 
-  // Initialize the game with all minus symbols
-  const initGame = useCallback(() => {
-    const gridSize = 10 * 6; // 10 columns x 6 rows
-    const initialGrid = Array(gridSize).fill("minus" as const);
+  // מספר השורות והטורים בגריד
+  const rows = 15;
+  const columns = 10;
+  const totalCells = rows * columns;
+
+  // פונקציה ליצירת תוכן רנדומלי של פלוסים ומינוסים
+  const generateRandomItems = useCallback(() => {
+    if (IS_DEVELOPMENT_MODE) {
+      console.log("Generating random plus/minus items");
+    }
     
-    setGridItems(initialGrid);
-    setPlusCount(0);
-    setMinusCount(gridSize);
-    setMorePluses(false);
+    // הגדרה האם יהיו יותר פלוסים או יותר מינוסים
+    const shouldHaveMorePluses = Math.random() > 0.5;
     
-    console.log("Initialized PlusMinus game with", gridSize, "items");
+    if (IS_DEVELOPMENT_MODE) {
+      console.log(`This round will have ${shouldHaveMorePluses ? 'more pluses' : 'more minuses'}`);
+    }
     
-    return () => {}; // Empty cleanup function
+    setMorePluses(shouldHaveMorePluses);
+    
+    // אם יש יותר פלוסים, זה מצב הניצחון - נעדכן את הסטייט
+    if (shouldHaveMorePluses) {
+      setSpecialItemPosition(0); // שימוש בפוזיציה 0 להפעלת אינדיקציה
+    } else {
+      setSpecialItemPosition(null);
+    }
+    
+    return shouldHaveMorePluses;
   }, []);
 
-  // Start changing symbols from minus to plus
+  // אפקט לאתחול משחק חדש ויצירת אייטמים רנדומליים
   useEffect(() => {
-    if (gameState !== "playing") return;
-    
     const interval = setInterval(() => {
-      setGridItems(prevItems => {
-        // Find all minus positions
-        const minusPositions = prevItems
-          .map((item, index) => item === "minus" ? index : -1)
-          .filter(pos => pos !== -1);
-        
-        if (minusPositions.length === 0) return prevItems;
-        
-        // Convert 1-3 minus symbols to plus per interval
-        // Increase the rate to ensure we get to more pluses before time runs out
-        const numToChange = Math.min(Math.floor(Math.random() * 4) + 2, minusPositions.length);
-        const newItems = [...prevItems];
-        
-        for (let i = 0; i < numToChange; i++) {
-          const randomIndex = Math.floor(Math.random() * minusPositions.length);
-          const posToChange = minusPositions[randomIndex];
-          newItems[posToChange] = "plus";
-          
-          // Remove this position from available positions
-          minusPositions.splice(randomIndex, 1);
-        }
-        
-        // Update counts
-        const newPlusCount = newItems.filter(item => item === "plus").length;
-        const newMinusCount = newItems.length - newPlusCount;
-        
-        setPlusCount(newPlusCount);
-        setMinusCount(newMinusCount);
-        
-        // Check if there are now more pluses than minuses
-        if (newPlusCount > newMinusCount && !morePluses) {
-          console.log("Now more pluses than minuses:", newPlusCount, ">", newMinusCount);
-          setMorePluses(true);
-          setTimeWhenMorePluses(Date.now());
-        }
-        
-        return newItems;
-      });
-    }, 400); // Slightly faster to ensure we get to win condition
+      generateRandomItems();
+    }, 3000); // החלפה כל 3 שניות
     
     return () => clearInterval(interval);
-  }, [gameState, morePluses]);
+  }, [generateRandomItems]);
 
-  // Add a guaranteed win condition if we're reaching time limit and no win condition yet
-  useEffect(() => {
-    if (gameState !== "playing" || morePluses) return;
-    
-    // If we're past 70% of the time limit and no win condition yet, force it
-    const timeThreshold = maxTime * 0.7;
-    
-    if (timeRemaining < maxTime - timeThreshold) {
-      const forceWinTimeout = setTimeout(() => {
-        if (!morePluses && gameState === "playing") {
-          console.log("Forcing win condition as time is running out");
-          // Convert enough minuses to pluses to trigger win condition
-          setGridItems(prevItems => {
-            const newItems = [...prevItems];
-            const totalItems = newItems.length;
-            const targetPluses = Math.ceil(totalItems / 2) + 1; // More than half
-            const currentPluses = newItems.filter(item => item === "plus").length;
-            const neededPluses = targetPluses - currentPluses;
-            
-            if (neededPluses > 0) {
-              const minusPositions = newItems
-                .map((item, index) => item === "minus" ? index : -1)
-                .filter(pos => pos !== -1);
-                
-              const numToChange = Math.min(neededPluses, minusPositions.length);
-              
-              for (let i = 0; i < numToChange; i++) {
-                const randomIndex = Math.floor(Math.random() * minusPositions.length);
-                const posToChange = minusPositions[randomIndex];
-                newItems[posToChange] = "plus";
-                minusPositions.splice(randomIndex, 1);
-              }
-              
-              const newPlusCount = newItems.filter(item => item === "plus").length;
-              const newMinusCount = totalItems - newPlusCount;
-              
-              setPlusCount(newPlusCount);
-              setMinusCount(newMinusCount);
-              
-              if (newPlusCount > newMinusCount) {
-                setMorePluses(true);
-                setTimeWhenMorePluses(Date.now());
-              }
-            }
-            
-            return newItems;
-          });
-        }
-      }, timeThreshold / 2);
-      
-      return () => clearTimeout(forceWinTimeout);
-    }
-  }, [gameState, timeRemaining, maxTime, morePluses]);
+  // רנדור פריט רגיל - מינוס
+  const renderMinus = useCallback(() => {
+    return <span style={{ fontSize: '1em' }}>➖</span>;
+  }, []);
 
-  // Handle player action (tap)
-  const onPlayerAction = useCallback((player: Player) => {
-    if (gameState !== "playing") return;
-    
-    if (morePluses) {
-      // Player correctly identified more pluses
-      console.log("Player", player, "correctly identified more pluses");
-      const timeElapsed = Date.now() - timeWhenMorePluses;
-      setWinner(player);
-      setGameState("complete");
-      
-      setTimeout(() => {
-        onGameComplete(player, timeElapsed);
-      }, 2000);
-    } else {
-      // Player tapped too early
-      console.log("Player", player, "tapped too early, other player wins");
-      const otherPlayer = player === 1 ? 2 : 1;
-      setWinner(otherPlayer);
-      setGameState("complete");
-      
-      setTimeout(() => {
-        onGameComplete(otherPlayer, 0);
-      }, 2000);
-    }
-  }, [gameState, morePluses, timeWhenMorePluses, setWinner, setGameState, onGameComplete]);
+  // רנדור פריט מיוחד - פלוס
+  const renderPlus = useCallback(() => {
+    return <span style={{ fontSize: '1em' }}>➕</span>;
+  }, []);
 
-  // Initialize the game when state changes to playing
-  useEffect(() => {
-    if (gameState === "playing") {
-      const cleanup = initGame();
-      return cleanup;
-    }
-  }, [gameState, initGame]);
-
-  // Create grid display for visualization
-  const renderGrid = () => {
-    const rotationAngles = [0, 90, 180, 270];
+  // הוספת "פריט מיוחד" - מחזיר מיקום אקראי לפריט מיוחד
+  const addSpecialItem = useCallback((availablePositions: number[]) => {
+    if (availablePositions.length === 0) return null;
     
-    return (
-      <div className="grid grid-rows-6 grid-cols-10 gap-0 w-full h-full p-0">
-        {gridItems.map((type, index) => {
-          // Pick one of four rotation states
-          const rotationIndex = Math.floor(Math.random() * 4);
-          const rotation = rotationAngles[rotationIndex];
-          
-          return (
-            <div 
-              key={index} 
-              className="flex items-center justify-center p-0 m-0"
-              style={{ transform: `rotate(${rotation}deg)` }}
-            >
-              {type === "plus" ? (
-                <span className="text-xl">➕</span>
-              ) : (
-                <span className="text-xl">➖</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
+    // בוחר מיקום אקראי מתוך המיקומים הזמינים
+    const randomIndex = Math.floor(Math.random() * availablePositions.length);
+    const position = availablePositions[randomIndex];
+    
+    console.log("Adding special item (plus) at position:", position);
+    return position; // מחזיר מיקום תקף לפריט המיוחד
+  }, []);
 
   return (
-    <TwoPlayerGameLayout
-      gameState={gameState}
-      setGameState={setGameState}
+    <BaseGridGame
       player1Score={player1Score}
       player2Score={player2Score}
       currentGame={currentGame}
       totalGames={totalGames}
-      timeRemaining={timeRemaining}
       maxTime={maxTime}
-      winner={winner}
-      resultMessage={
-        morePluses
-          ? winner ? (t('plusMinusSuccess') || "Tapped first when there were more pluses!") : (t('plusMinusTimeout') || "Time's up! No one tapped in time.")
-          : winner ? (t('plusMinusFail') || "The other player tapped too early!") : (t('timeUp') || "Time's up!")
-      }
-      onPlayerAction={onPlayerAction}
-      startScreenTitle={t('plusMinus') || "Plus or Minus"}
-      startScreenDescription={t('plusMinusDesc') || "Tap when there are more plus signs than minus signs!"}
+      columns={columns}
+      rows={rows}
+      gap={0}
+      specialItemPosition={specialItemPosition}
+      renderRegularItem={renderMinus}
+      renderSpecialItem={renderPlus}
+      addSpecialItem={addSpecialItem}
+      startScreenTitle={t('plusMinus')}
+      startScreenDescription={t('plusMinusDesc')}
       startScreenIcon="➕➖"
+      resultMessages={{
+        success: t('plusMinusSuccess'),
+        failure: t('plusMinusFail'),
+        timeout: t('plusMinusTimeout')
+      }}
       onGameComplete={onGameComplete}
-      winConditionMet={morePluses}
-    >
-      <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-blue-200 to-purple-200 p-0">
-        {gameState === "playing" && (
-          <>
-            <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
-              ➕: {plusCount} | ➖: {minusCount}
-            </div>
-            {renderGrid()}
-            <div className="absolute bottom-2 text-sm font-bold text-black bg-white/70 px-3 py-1 rounded-full">
-              {morePluses ? (
-                <span className="text-green-500">{t('tapNow') || "TAP NOW!"}</span>
-              ) : (
-                <span>{t('wait') || "WAIT..."}</span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </TwoPlayerGameLayout>
+      rotationDuration={0.8}
+      winConditionName={t('plusesAppeared')}
+    />
   );
 };
 

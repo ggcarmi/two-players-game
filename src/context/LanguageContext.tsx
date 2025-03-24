@@ -194,12 +194,14 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     'foundDogFirst': 'Found the dog first!',
     'tappedTooEarly': 'You tapped too early! Your opponent wins!',
     'noOneDog': 'Time\'s up! No one found the dog.',
+    'dogAppeared': 'Dog has appeared', // תרגום חדש למפתח החסר
     
     // Find Sad Face game
     'findSad': 'Find the Sad Face',
     'findSadDesc': 'A sad face will appear among the happy ones. Be the first to tap it!',
     'foundSadFirst': 'Found the sad face first!',
     'noOneSad': 'Time\'s up! No one found the sad face.',
+    'sadAppeared': 'Sad face has appeared', // תרגום חדש למפתח החסר
     
     // Tap Fast game
     'tapFast': 'Tap Fast',
@@ -238,17 +240,12 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     'plusMinusSuccess': 'Tapped first when there were more plus signs!',
     'plusMinusFail': 'You tapped too early! Your opponent wins!',
     'plusMinusTimeout': 'Time\'s up! No one tapped in time.',
+    'plusesAppeared': 'Plus signs have appeared', // תרגום חדש למפתח החסר
+    'foundMorePluses': 'You found more plus signs!', // תרגום חדש למפתח החסר
+    'noOneFoundPluses': 'No one found the plus signs in time', // תרגום חדש למפתח החסר
     
-    // Settings
-    'settingsSaved': 'Settings saved automatically',
-    'gameDuration': 'Game duration updated to {seconds} seconds',
-    'hebrew': 'Hebrew',
-    'english': 'English',
-    'selectLanguage': 'Select Language',
-    'selectLanguageDesc': 'Choose the interface language of the game',
-    
-    // Game Completion
-    'gameSessionComplete': 'Game Session Complete!',
+    // Special items
+    'specialItemAppeared': 'Special item has appeared', // תרגום חדש למפתח החסר
   },
   es: {
     'settings': 'Configuración',

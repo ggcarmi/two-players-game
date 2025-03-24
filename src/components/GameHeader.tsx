@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Home, Settings, SkipForward, Check } from "lucide-react";
@@ -14,6 +13,12 @@ interface GameHeaderProps {
   timerValue?: number;
   maxTime?: number;
   winConditionMet?: boolean;
+  isDevelopmentMode?: boolean;
+  specialItemName?: string;
+  specialItemAppeared?: boolean;
+  onSkipGame?: () => void;
+  winCondition?: string;
+  isWinConditionMet?: boolean;
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({
@@ -24,17 +29,15 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   timerValue,
   maxTime,
   winConditionMet = false,
+  isDevelopmentMode = false,
+  specialItemName = "",
+  specialItemAppeared = false,
+  onSkipGame,
+  winCondition,
+  isWinConditionMet = false,
 }) => {
   const navigate = useNavigate();
   const { setWinner } = useGameSessionContext();
-
-  // For development mode
-  const IS_DEBUG_MODE = true; // For development, set to false in production
-
-  const handleSkipGame = () => {
-    // Skip to next game without declaring a winner
-    setWinner(null, 0);
-  };
 
   return (
     <div className="w-full px-4 py-3 flex items-center justify-between bg-black text-white border-b-4 border-black z-10">
@@ -62,30 +65,42 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             />
           </div>
         )}
+        
+        {/* הוספת אינדיקציה למצב פיתוח */}
+        {isDevelopmentMode && (
+          <div className="text-xs text-yellow-500 mt-1">
+            {specialItemName && !specialItemAppeared && `Waiting for ${specialItemName}...`}
+            {specialItemName && specialItemAppeared && `${specialItemName} appeared!`}
+            {winCondition && ` (${winCondition})`}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
-        {IS_DEBUG_MODE && (
+        {isDevelopmentMode && (
           <>
-            <button
-              title="Skip Game"
-              className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center"
-              onClick={handleSkipGame}
-            >
-              <SkipForward className="h-4 w-4" />
-            </button>
+            {onSkipGame && (
+              <button
+                title="Skip Game"
+                className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center"
+                onClick={onSkipGame}
+              >
+                <SkipForward className="h-4 w-4" />
+              </button>
+            )}
             
             <div 
               title="Win Condition Status"
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center",
-                winConditionMet ? "bg-green-500" : "bg-yellow-500"
+                isWinConditionMet ? "bg-green-500" : "bg-yellow-500"
               )}
             >
               <Check className="h-4 w-4 text-white" />
             </div>
           </>
         )}
+
         <button
           className="w-10 h-10 rounded-full bg-white text-black border-2 border-black flex items-center justify-center"
           onClick={() => navigate("/settings")}

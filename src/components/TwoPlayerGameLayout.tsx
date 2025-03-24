@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import GameHeader from "./GameHeader";
 import PlayerSide from "./PlayerSide";
@@ -6,6 +5,15 @@ import GameResult from "./GameResult";
 import { Player } from "@/types/game";
 import { Button } from "./ui/button";
 import { motion } from "framer-motion";
+
+interface HeaderProps {
+  isDevelopmentMode?: boolean;
+  specialItemName?: string;
+  specialItemAppeared?: boolean;
+  onSkipGame?: () => void;
+  winCondition?: string;
+  isWinConditionMet?: boolean;
+}
 
 interface TwoPlayerGameLayoutProps {
   gameState: "ready" | "playing" | "complete";
@@ -25,6 +33,7 @@ interface TwoPlayerGameLayoutProps {
   onGameComplete: (winner: Player | null, timeElapsed: number) => void;
   children: React.ReactNode;
   winConditionMet?: boolean;
+  headerProps?: HeaderProps; // שימוש בטיפוס החדש
 }
 
 const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
@@ -45,6 +54,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
   onGameComplete,
   children,
   winConditionMet = false,
+  headerProps,
 }) => {
   const [keyPressed, setKeyPressed] = useState<string | null>(null);
 
@@ -87,13 +97,16 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
 
       {/* Game Header with Scores */}
       <GameHeader
-        player1Score={player1Score}
-        player2Score={player2Score}
-        currentGame={currentGame}
-        totalGames={totalGames}
-        timerValue={gameState === "playing" ? timeRemaining : undefined}
-        maxTime={maxTime}
-        winConditionMet={winConditionMet}
+        {...{
+          player1Score,
+          player2Score,
+          currentGame,
+          totalGames,
+          timerValue: gameState === "playing" ? timeRemaining : undefined,
+          maxTime,
+          winConditionMet,
+          ...(headerProps || {}) // העברת כל הפרופס הנוספים מ-headerProps
+        }}
       />
 
       <div className="relative flex-1 w-full h-full bg-black overflow-hidden p-0 m-0">

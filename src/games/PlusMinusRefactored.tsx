@@ -54,7 +54,13 @@ class PlusMinusRefactored extends AbstractGridGame<PlusMinusProps> {
   getWinCondition(): WinCondition {
     const { t } = useLanguage();
     return {
-      check: () => this.state.plusCount > this.state.minusCount,
+      check: () => {
+        const { plusCount, minusCount } = this.state;
+        // תמיד נוודא שיש יותר פלוסים ממינוסים
+        const isWinConditionMet = plusCount > minusCount;
+        console.log(`Checking win condition: plusCount=${plusCount}, minusCount=${minusCount}, isWinConditionMet=${isWinConditionMet}`);
+        return isWinConditionMet;
+      },
       name: t('plusesAppeared')
     };
   }
@@ -89,14 +95,78 @@ class PlusMinusRefactored extends AbstractGridGame<PlusMinusProps> {
         };
       });
       
+      // עדכון הסטייט עם הערכים החדשים
       return {
         items: newItems,
         plusCount,
         minusCount,
-        isWinConditionMet: plusCount > minusCount,
       };
+    }, () => {
+      // בדיקת תנאי הניצחון לאחר עדכון הסטייט
+      const isWinConditionMet = this.getWinCondition().check();
+      console.log(`Checking win condition after update: isWinConditionMet=${isWinConditionMet}`);
+      this.setState({ isWinConditionMet });
+      
+      // קריאה למנהל האירועים לאחר עדכון ה-state
+      if (isWinConditionMet) {
+        this.gameEventManager('specialItemAppeared');
+      }
     });
   };
+
+  // דריסת מתודת טווח ההשהיה
+  getDelayRange(): { min: number; max: number } | null {
+    // תיקון: תמיד יופיע בין 20% ל-50% מזמן המשחק
+    const { maxTime = 10000 } = this.props;
+    const minDelay = maxTime * 0.2; // 20% מזמן המשחק
+    const maxDelay = maxTime * 0.5; // 50% מזמן המשחק
+    
+    console.log(`🛠️ [PlusMinus] קביעת טווח זמן להופעת פלוסים: ${minDelay}ms עד ${maxDelay}ms`);
+    return { min: minDelay, max: maxDelay };
+  }
+  
+  // תוספת חדשה: כפיית הופעת הפריט המיוחד
+  componentDidMount() {
+    super.componentDidMount();
+    
+    // הגדרת טיימר נוסף שיבטיח הופעת הפריט המיוחד
+    if (this.props.maxTime) {
+      const guaranteedDelay = this.props.maxTime * 0.3; // 30% מזמן המשחק
+      
+      console.log(`🛠️ [PlusMinus] הגדרת טיימר חירום להופעת פלוסים אחרי ${guaranteedDelay}ms`);
+      
+      setTimeout(() => {
+        // בדיקה שהמשחק עדיין פעיל ושהפריט המיוחד עדיין לא הופיע
+        if (this.gameState.gameState === "playing" && this.state.specialItemPosition === null) {
+          console.log("🔴 [PlusMinus] כפיית הופעת פלוסים דרך טיימר חירום");
+          
+          try {
+            const availablePositions = Array.from(
+              { length: this.props.rows * this.props.columns },
+              (_, i) => i
+            );
+            
+            // בחירת מיקום רנדומלי
+            const randomIndex = Math.floor(Math.random() * availablePositions.length);
+            const position = availablePositions[randomIndex];
+            
+            // עדכון המצב באופן ישיר
+            this.setState({
+              specialItemPosition: position,
+              timeWhenSpecialAppeared: Date.now(),
+              isWinConditionMet: true
+            }, () => {
+              // עדכון הממשק מיד
+              this.updateItemsWithSpecial();
+              console.log(`✅ [PlusMinus] פלוסים הופיעו בהצלחה במיקום ${position}`);
+            });
+          } catch (error) {
+            console.error("❌ [PlusMinus] שגיאה בכפיית הופעת פלוסים:", error);
+          }
+        }
+      }, guaranteedDelay);
+    }
+  }
 }
 
 /**

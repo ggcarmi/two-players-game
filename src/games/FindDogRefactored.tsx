@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Player } from "@/types/game";
 import AbstractGridGame, { ResultMessages, WinCondition } from "@/components/AbstractGridGame";
 import { useLanguage } from "@/context/LanguageContext";
@@ -43,17 +43,68 @@ class FindDogRefactored extends AbstractGridGame<FindDogProps> {
   getWinCondition(): WinCondition {
     const { t } = useLanguage();
     return {
-      check: () => this.state.specialItemPosition !== null,
+      check: () => {
+        // תמיד נחזיר אמת אם הכלב הופיע
+        const dogAppeared = this.state.specialItemPosition !== null;
+        console.log(`Checking win condition: dogAppeared=${dogAppeared}`);
+        return dogAppeared;
+      },
       name: t('dogAppeared')
     };
   }
 
   // דריסת מתודת טווח ההשהיה
   getDelayRange(): { min: number; max: number } | null {
-    // קובע זמן הופעה רנדומלי בין 1 ל-7 שניות
-    const minDelay = 1000; // מינימום שנייה אחת
-    const maxDelay = Math.min(7000, (this.props.maxTime || 10000) * 0.7); // מקסימום 7 שניות או 70% מהזמן המקסימלי
+    // תיקון: תמיד יופיע בין 20% ל-50% מזמן המשחק
+    const { maxTime = 10000 } = this.props;
+    const minDelay = maxTime * 0.2; // 20% מזמן המשחק
+    const maxDelay = maxTime * 0.5; // 50% מזמן המשחק
+    
+    console.log(`🛠️ [FindDog] קביעת טווח זמן להופעת כלב: ${minDelay}ms עד ${maxDelay}ms`);
     return { min: minDelay, max: maxDelay };
+  }
+  
+  // תוספת חדשה: כפיית הופעת הפריט המיוחד
+  componentDidMount() {
+    super.componentDidMount();
+    
+    // הגדרת טיימר נוסף שיבטיח הופעת הפריט המיוחד
+    if (this.props.maxTime) {
+      const guaranteedDelay = this.props.maxTime * 0.3; // 30% מזמן המשחק
+      
+      console.log(`🛠️ [FindDog] הגדרת טיימר חירום להופעת כלב אחרי ${guaranteedDelay}ms`);
+      
+      setTimeout(() => {
+        // בדיקה שהמשחק עדיין פעיל ושהפריט המיוחד עדיין לא הופיע
+        if (this.gameState.gameState === "playing" && this.state.specialItemPosition === null) {
+          console.log("🔴 [FindDog] כפיית הופעת כלב דרך טיימר חירום");
+          
+          try {
+            const availablePositions = Array.from(
+              { length: this.props.rows * this.props.columns },
+              (_, i) => i
+            );
+            
+            // בחירת מיקום רנדומלי
+            const randomIndex = Math.floor(Math.random() * availablePositions.length);
+            const position = availablePositions[randomIndex];
+            
+            // עדכון המצב באופן ישיר
+            this.setState({
+              specialItemPosition: position,
+              timeWhenSpecialAppeared: Date.now(),
+              isWinConditionMet: true
+            }, () => {
+              // עדכון הממשק מיד
+              this.updateItemsWithSpecial();
+              console.log(`✅ [FindDog] כלב הופיע בהצלחה במיקום ${position}`);
+            });
+          } catch (error) {
+            console.error("❌ [FindDog] שגיאה בכפיית הופעת כלב:", error);
+          }
+        }
+      }, guaranteedDelay);
+    }
   }
 }
 
