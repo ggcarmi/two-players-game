@@ -96,7 +96,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         winConditionMet={winConditionMet}
       />
 
-      <div className="relative flex-1 w-full h-full bg-black overflow-hidden">
+      <div className="relative flex-1 w-full h-full bg-black overflow-hidden p-0 m-0">
         {/* Start Screen */}
         {gameState === "ready" && (
           <div 
@@ -119,7 +119,7 @@ const TwoPlayerGameLayout: React.FC<TwoPlayerGameLayoutProps> = ({
         )}
 
         {/* Game Content */}
-        <div className="w-full h-full">{children}</div>
+        <div className="w-full h-full flex-1">{children}</div>
 
         {/* Result Screen */}
         {gameState === "complete" && (

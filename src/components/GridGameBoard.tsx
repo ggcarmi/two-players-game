@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -19,6 +18,9 @@ interface GridGameBoardProps {
   className?: string;
   itemClassName?: string;
   animateSpecialItems?: boolean;
+  rotationDuration?: number;
+  isDevelopmentMode?: boolean;
+  autoRotate?: boolean;
 }
 
 const GridGameBoard: React.FC<GridGameBoardProps> = ({
@@ -28,81 +30,72 @@ const GridGameBoard: React.FC<GridGameBoardProps> = ({
   className,
   itemClassName,
   animateSpecialItems = true,
+  rotationDuration = 0.2,
+  isDevelopmentMode = false,
+  autoRotate = true,
 }) => {
-  // Calculate rows based on items and columns
+  const [rotations, setRotations] = useState<{ [key: number]: number }>({});
   const rows = Math.ceil(items.length / columns);
-  
-  // State for rotation of each item
-  const [rotations, setRotations] = useState<number[]>([]);
-  
-  // Initialize rotations randomly (0, 90, 180, 270 degrees)
+
   useEffect(() => {
-    const rotationValues = [0, 90, 180, 270];
-    const initialRotations = items.map(() => 
-      rotationValues[Math.floor(Math.random() * rotationValues.length)]
-    );
-    setRotations(initialRotations);
-  }, [items.length]);
-  
-  // Update rotations every 1 second (changed from every 1 second)
-  useEffect(() => {
-    const rotationValues = [0, 90, 180, 270];
-    
-    const interval = setInterval(() => {
-      setRotations(prev => 
-        prev.map(() => rotationValues[Math.floor(Math.random() * rotationValues.length)])
-      );
-    }, 1000); // Changed to 1 second
-    
-    return () => clearInterval(interval);
-  }, []);
-  
+    if (autoRotate) {
+      const interval = setInterval(() => {
+        setRotations(prev => {
+          const newRotations = { ...prev };
+          items.forEach(item => {
+            newRotations[item.id] = (prev[item.id] || 0) + (Math.random() > 0.5 ? 90 : -90);
+          });
+          return newRotations;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [autoRotate, items]);
+
   return (
     <div className={cn(
-      "w-full h-full flex items-center justify-center p-0", 
+      "flex items-center justify-center w-full h-full p-0 m-0 overflow-hidden",
       className
     )}>
-      <div 
-        className={cn(
-          "grid w-full h-full"
-        )}
-        style={{ 
-          gridTemplateRows: `repeat(${rows}, 1fr)`,
-          gridTemplateColumns: `repeat(${columns}, 1fr)`,
-          gap: `0px`, // Forced to 0px
-        }}
-      >
-        {items.map((item, index) => (
-          <div
-            key={`grid-item-${item.id}`}
-            className={cn(
-              "flex items-center justify-center p-0 m-0 w-full h-full border-0", 
-              item.onClick ? "cursor-pointer" : "",
-              "text-[calc(min(4vw,4vh))]",
-              itemClassName
-            )}
-            onClick={item.onClick}
-          >
+      <div className="flex-grow-0 flex-shrink-0 aspect-square">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${columns}, 1fr)`,
+            gap: `${gap}px`,
+            width: "100%",
+            height: "100%",
+            aspectRatio: "1",
+          }}
+        >
+          {items.map((item) => (
             <div
-              style={{ 
-                transform: `rotate(${rotations[index]}deg)`,
-                transition: "transform 0.3s ease"
-              }}
-            >
-              {item.isSpecial && animateSpecialItems ? (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="text-[calc(min(4vw,4vh))]"
-                >
-                  {item.content}
-                </motion.div>
-              ) : (
-                item.content
+              key={`cell-${item.id}`}
+              onClick={item.onClick}
+              className={cn(
+                "w-full h-full p-0 m-0",
+                "flex items-center justify-center",
+                "aspect-square",
+                item.onClick && "cursor-pointer",
+                itemClassName,
+                item.isSpecial && isDevelopmentMode && "outline outline-2 outline-red-500 bg-red-100/20"
               )}
+            >
+              <motion.div
+                initial={{ scale: item.isSpecial && animateSpecialItems ? 0 : 1, rotate: 0 }}
+                animate={{ 
+                  scale: 1, 
+                  rotate: rotations[item.id] || 0 
+                }}
+                transition={{ duration: rotationDuration }}
+                className="w-full h-full flex items-center justify-center p-0 m-0"
+                style={{ transformOrigin: "center" }}
+              >
+                {item.content}
+              </motion.div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
